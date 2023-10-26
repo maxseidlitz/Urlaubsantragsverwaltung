@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Urlaubsantragsverwaltung</title>
+</head>
+<body>
+    <h1>Urlaubsantragsverwaltung</h1>
+    <p>Willkommen zur Urlaubsantragsverwaltung. Wählen Sie eine Option:</p>
+    
+    <button onclick="redirectToAntragStellen()">Antrag stellen</button>
+    <button onclick="redirectToAntragPruefen()">Antrag prüfen</button>
+
+    <script>
+        // JavaScript-Funktionen zum Weiterleiten zu den jeweiligen Seiten
+        function redirectToAntragStellen() {
+            window.location.href = "antrag_stellen.html"
+        }
+
+        function redirectToAntragPruefen() {
+            window.location.href = "antrag_pruefen.html";
+        }
+    </script>
+</body>
+</html>

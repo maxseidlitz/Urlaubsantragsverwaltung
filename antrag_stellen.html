@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Antrag stellen</title>
+</head>
+<body>
+    <h1>Antrag stellen</h1>
+    <form action="verarbeitungsseite.php" method="post">
+        <label for="personalnummer">Personalnummer:</label>
+        <input type="text" id="personalnummer" name="personalnummer" required><br>
+
+        <label for="startdatum">Startdatum Urlaub:</label>
+        <input type="date" id="startdatum" name="startdatum" required><br>
+
+        <label for="enddatum">Enddatum Urlaub:</label>
+        <input type="date" id="enddatum" name="enddatum" required><br>
+
+        <label for="urlaubstage">Summe Urlaubstage:</label>
+        <input type="text" id="urlaubstage" name="urlaubstage" readonly><br>
+
+        <label for="urlaubsart">Art des Urlaubs:</label><br>
+        <input type="radio" id="bildungsurlaub" name="urlaubsart" value="Bildungsurlaub">
+        <label for="bildungsurlaub">Bildungsurlaub</label><br>
+        
+        <input type="radio" id="umzug" name="urlaubsart" value="Umzug">
+        <label for="umzug">Umzug</label><br>
+        
+        <input type="radio" id="normalerUrlaub" name="urlaubsart" value="Normaler Urlaub">
+        <label for="normalerUrlaub">Normaler Urlaub</label><br>
+
+        <input type="submit" value="Antrag abschicken">
+    </form>
+
+    <script>
+        // JavaScript-Funktion, um die Anzahl der Urlaubstage automatisch zu berechnen
+        document.getElementById('startdatum').addEventListener('change', updateUrlaubstage);
+        document.getElementById('enddatum').addEventListener('change', updateUrlaubstage);
+
+        function updateUrlaubstage() {
+            var startdatum = new Date(document.getElementById('startdatum').value);
+            var enddatum = new Date(document.getElementById('enddatum').value);
+            var millisecondsPerDay = 24 * 60 * 60 * 1000;
+            var urlaubstage = Math.round((enddatum - startdatum) / millisecondsPerDay);
+            document.getElementById('urlaubstage').value = urlaubstage;
+        }
+    </script>
+</body>
+</html>
