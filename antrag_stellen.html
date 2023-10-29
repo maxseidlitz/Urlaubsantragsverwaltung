@@ -1,48 +1,77 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Antrag stellen</title>
+    <!-- Verknüpfung zu Bootstrap-CSS hinzufügen -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
+
 <body>
-    <h1>Antrag stellen</h1>
-    <form action="verarbeitungsseite.php" method="post">
-        <label for="personalnummer">Personalnummer:</label>
-        <input type="text" id="personalnummer" name="personalnummer" required><br>
+    <div class="container">
+        <h1 class="mt-4">Antrag stellen</h1>
+        <form action="verarbeitungsseite.php" method="post">
+            <div class="form-group">
+                <label for="personalnummer">Personalnummer:</label>
+                <input type="text" class="form-control" id="personalnummer" name="personalnummer" required>
+            </div>
 
-        <label for="startdatum">Startdatum Urlaub:</label>
-        <input type="date" id="startdatum" name="startdatum" required><br>
+            <div class="form-group">
+                <label for="startdatum">Startdatum Urlaub:</label>
+                <input type="date" class="form-control" id="startdatum" name="startdatum" required>
+            </div>
 
-        <label for="enddatum">Enddatum Urlaub:</label>
-        <input type="date" id="enddatum" name="enddatum" required><br>
+            <div class="form-group">
+                <label for="enddatum">Enddatum Urlaub:</label>
+                <input type="date" class="form-control" id="enddatum" name="enddatum" required>
+            </div>
 
-        <label for="urlaubstage">Summe Urlaubstage:</label>
-        <input type="text" id="urlaubstage" name="urlaubstage" readonly><br>
+            <div class="form-group">
+                <label for="urlaubstage">Summe Urlaubstage:</label>
+                <input type="text" class="form-control" id="urlaubstage" name="urlaubstage" readonly>
+            </div>
 
-        <label for="urlaubsart">Art des Urlaubs:</label><br>
-        <input type="radio" id="bildungsurlaub" name="urlaubsart" value="Bildungsurlaub">
-        <label for="bildungsurlaub">Bildungsurlaub</label><br>
-        
-        <input type="radio" id="umzug" name="urlaubsart" value="Umzug">
-        <label for="umzug">Umzug</label><br>
-        
-        <input type="radio" id="normalerUrlaub" name="urlaubsart" value="Normaler Urlaub">
-        <label for="normalerUrlaub">Normaler Urlaub</label><br>
+            <div class="form-group">
+                <label>Art des Urlaubs:</label><br>
+                <div class="form-check">
+                    <input type="radio" class="form-check-input" id="bildungsurlaub" name="urlaubsart" value="Bildungsurlaub">
+                    <label class="form-check-label" for="bildungsurlaub">Bildungsurlaub</label>
+                </div>
 
-        <input type="submit" value="Antrag abschicken">
-    </form>
+                <div class="form-check">
+                    <input type="radio" class="form-check-input" id="umzug" name="urlaubsart" value="Umzug">
+                    <label class="form-check-label" for="umzug">Umzug</label>
+                </div>
 
+                <div class="form-check">
+                    <input type="radio" class="form-check-input" id="normalerUrlaub" name="urlaubsart" value="Normaler Urlaub">
+                    <label class="form-check-label" for="normalerUrlaub">Normaler Urlaub</label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Antrag abschicken</button>
+        </form>
+    </div>
+
+    <!-- Verknüpfung zu Bootstrap-JavaScript hinzufügen (optional) -->
+    <!-- Hier sollten Sie auch die Verknüpfung zu jQuery hinzufügen, wenn Sie es nicht bereits getan haben. -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- JavaScript-Funktion, um die Anzahl der Urlaubstage automatisch zu berechnen -->
     <script>
-        // JavaScript-Funktion, um die Anzahl der Urlaubstage automatisch zu berechnen
-        document.getElementById('startdatum').addEventListener('change', updateUrlaubstage);
-        document.getElementById('enddatum').addEventListener('change', updateUrlaubstage);
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('startdatum').addEventListener('change', updateUrlaubstage);
+            document.getElementById('enddatum').addEventListener('change', updateUrlaubstage);
 
-        function updateUrlaubstage() {
-            var startdatum = new Date(document.getElementById('startdatum').value);
-            var enddatum = new Date(document.getElementById('enddatum').value);
-            var millisecondsPerDay = 24 * 60 * 60 * 1000;
-            var urlaubstage = Math.round((enddatum - startdatum) / millisecondsPerDay);
-            document.getElementById('urlaubstage').value = urlaubstage;
-        }
+            function updateUrlaubstage() {
+                var startdatum = new Date(document.getElementById('startdatum').value);
+                var enddatum = new Date(document.getElementById('enddatum').value);
+                var millisecondsPerDay = 24 * 60 * 60 * 1000;
+                var urlaubstage = Math.round((enddatum - startdatum) / millisecondsPerDay);
+                document.getElementById('urlaubstage').value = urlaubstage;
+            }
+        });
     </script>
 </body>
+
 </html>
