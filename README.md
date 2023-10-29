@@ -4,13 +4,13 @@ Die Urlaubsantragsverwaltung ist eine einfache Webanwendung zur Verwaltung von U
 
 ## Technologien
 
-- **Programmiersprache:** Ihr Text (z. B. PHP, Python, JavaScript, ...)
+- **Programmiersprache:** Python, JScript, SQL, PHP
 
 - **Datenbank:** MySQL
 
 - **Frontend:** HTML, CSS, JavaScript
 
-- **Webframework (optional):** Ihr Text (z. B. Flask, Express, ...)
+- **Webframework (optional):** später vielleicht Flutter
 
 ## Funktionen
 
