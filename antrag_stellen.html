@@ -10,7 +10,7 @@
 <body>
     <div class="container">
         <h1 class="mt-4">Antrag stellen</h1>
-        <form action="verarbeitungsseite.php" method="post">
+        <form id="myForm" action="http://localhost:3000/process_form" method="POST">
             <div class="form-group">
                 <label for="personalnummer">Personalnummer:</label>
                 <input type="text" class="form-control" id="personalnummer" name="personalnummer" required>
@@ -34,7 +34,8 @@
             <div class="form-group">
                 <label>Art des Urlaubs:</label><br>
                 <div class="form-check">
-                    <input type="radio" class="form-check-input" id="bildungsurlaub" name="urlaubsart" value="Bildungsurlaub">
+                    <input type="radio" class="form-check-input" id="bildungsurlaub" name="urlaubsart"
+                        value="Bildungsurlaub">
                     <label class="form-check-label" for="bildungsurlaub">Bildungsurlaub</label>
                 </div>
 
@@ -44,7 +45,8 @@
                 </div>
 
                 <div class="form-check">
-                    <input type="radio" class="form-check-input" id="normalerUrlaub" name="urlaubsart" value="Normaler Urlaub">
+                    <input type="radio" class="form-check-input" id="normalerUrlaub" name="urlaubsart"
+                        value="Normaler Urlaub">
                     <label class="form-check-label" for="normalerUrlaub">Normaler Urlaub</label>
                 </div>
             </div>
@@ -53,11 +55,7 @@
         </form>
     </div>
 
-    <!-- Verknüpfung zu Bootstrap-JavaScript hinzufügen (optional) -->
-    <!-- Hier sollten Sie auch die Verknüpfung zu jQuery hinzufügen, wenn Sie es nicht bereits getan haben. -->
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
-    <!-- JavaScript-Funktion, um die Anzahl der Urlaubstage automatisch zu berechnen -->
+    <!-- JavaScript-Funktion, um die Anzahl der Urlaubstage automatisch zu berechnen TODO: Wochenenden + Feiertage ausrechnen-->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('startdatum').addEventListener('change', updateUrlaubstage);
