@@ -22,6 +22,8 @@ Die Urlaubsantragsverwaltung ist eine einfache Webanwendung zur Verwaltung von U
   - Art des Urlaubs (Bildungsurlaub, Umzug, Normaler Urlaub)
 - Antrag prüfen: Vorgesetzte oder Administratoren können eingereichte Urlaubsanträge überprüfen, genehmigen oder ablehnen.
 
+[User-Stories](https://mseid.notion.site/Urlaubsantragsverwaltung-OpenSource-f3835e6b4d8a4f819534d816b497f6ac?pvs=4)
+
 ## Verwendung
 
 1. Klonen Sie das Repository auf Ihren lokalen Computer:
