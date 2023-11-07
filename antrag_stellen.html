@@ -75,6 +75,47 @@
                 document.getElementById('urlaubstage').value = urlaubstage;
             }
         });
+
+        document.getElementById('myForm').addEventListener('submit', function (event) {
+                // Add custom validation logic here
+                if (!validateForm()) {
+                    event.preventDefault(); // Prevent form submission
+                }
+            });
+
+        function validateForm() {
+            var personalnummer = document.getElementById('personalnummer').value;
+            var startdatum = document.getElementById('startdatum').value;
+            var enddatum = document.getElementById('enddatum').value;
+            // Add more fields as needed
+
+            // Check if personalnummer is a number
+            if (isNaN(personalnummer)) {
+                alert('Personalnummer must be a number.');
+                return false;
+            }
+
+            // Check if startdatum is before enddatum
+            if (new Date(startdatum) > new Date(enddatum)) {
+                alert('Das Startdatum muss vor dem Enddatum liegen.');
+                return false;
+            }
+
+            // Check if startdatum are after todays date
+            if (new Date(startdatum) < new Date()) {
+                alert('Das Startdatum muss mindestens morgen sein.');
+                return false;
+            }
+
+            // Check if enddatum are after todays date
+            if (new Date(enddatum) < new Date()) {
+                alert('Das Enddatum muss mindestens morgen sein.');
+                return false;
+            }
+
+            // Add more validation logic as needed
+            return true;
+        }
     </script>
 </body>
 

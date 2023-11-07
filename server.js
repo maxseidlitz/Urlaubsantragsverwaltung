@@ -18,13 +18,36 @@ const pool = new Pool({
     port: DB_PORT,
 });
 
+function getUserIDByUsername(username, callback) {
+    const query = 'SELECT user_id FROM users WHERE username = $1';
+
+    pool.query(query, [username], (error, result) => {
+        if (error) {
+            console.error('Error getting user_id:', error);
+            callback(error, null);
+        } else {
+            if (result.rows.length === 0) {
+                // Username not found
+                console.error("Username not found");
+                callback(null, null);
+            } else {
+                const user_id = result.rows[0].user_id;
+                callback(null, user_id);
+            }
+        }
+    });
+}
+
 app.post('/process_form', (req, res) => {
-    const { startdatum, enddatum, urlaubsart, personalnummer, urlaubstage } = req.body;
-    const status = "beantragt";
+    const { startdatum, enddatum, urlaubsart, personalnummer, urlaubstage, status } = req.body;
+
+    // const user_id = getUserIDByUsername(username);
+    // const manager_id = getUserIDByUsername(username);
+    const request_id = "req" + personalnummer + new Date();
 
     pool.query(
-        'INSERT INTO public.urlaub (status,anfang,ende,art,personalnummer,summeTage) VALUES ($1, $2, $3, $4, $5, $6)',
-        [status, startdatum, enddatum, urlaubsart, personalnummer, urlaubstage],
+        'INSERT INTO public.vacation_request (request_id,user_id,start_date,end_date,vacation_days,status,vacation_type,reason,manager_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+        [request_id, 'user1', startdatum, enddatum, urlaubstage, status, urlaubsart, 'Aufgrund von Umzug', 'manager1'],
         (error, results) => {
             if (error) {
                 console.error('Error inserting data:', error);
