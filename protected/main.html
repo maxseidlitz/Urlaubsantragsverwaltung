@@ -1,23 +1,42 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Urlaubsantragsverwaltung</title>
     <!-- Verknüpfung zu Bootstrap-CSS hinzufügen -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
+
 <body>
+    <style>
+        /* Style for the gear icon */
+        #adminIcon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            cursor: pointer;
+        }
+    </style>
     <div class="container">
         <h1 class="mt-4">Urlaubsantragsverwaltung</h1>
         <p>Willkommen zur Urlaubsantragsverwaltung. Wählen Sie eine Option:</p>
-        
+
         <!-- Verwenden Sie Bootstrap-Buttons -->
         <div class="btn-group">
             <a href="antrag_stellen.html" class="btn btn-primary">Antrag stellen</a>
-            <a href="antrag_pruefen.html" class="btn btn-success">Antrag prüfen</a>
+            <!-- Nur wenn Manager -> button sichtbar -->
+            <a href="antrag_pruefen.html" class="btn btn-success">Antrag prüfen</a> 
         </div>
+    </div>
+
+    <div id="adminIcon">
+        <a href="http://127.0.0.1:5500/protected/admin.html">
+            <span>&#9881;</span>
+        </a>
     </div>
 
     <!-- Verknüpfung zu Bootstrap-JavaScript hinzufügen (optional) -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
+
 </html>
