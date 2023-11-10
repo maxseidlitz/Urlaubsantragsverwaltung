@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Verknüpfung zu Bootstrap-CSS hinzufügen -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Admin Panel</title>
+</head>
+
+<body>
+    <h1>User Management</h1>
+
+    <!-- Display user list -->
+    <div id="userList"></div>
+
+    <!-- JavaScript to fetch and display user data -->
+    <script>
+        // Fetch user data from the server
+        fetch('/api/users')
+            .then(response => response.json())
+            .then(users => {
+                // Display user data in the userList div
+                const userListDiv = document.getElementById('userList');
+                userListDiv.innerHTML = '<h2>User List</h2>';
+
+                users.forEach(user => {
+                    userListDiv.innerHTML += `<p>${user.username} - ${user.email} - ${user.role}</p>`;
+                });
+            })
+            .catch(error => console.error('Error fetching user data:', error));
+    </script>
+</body>
+
+</html>

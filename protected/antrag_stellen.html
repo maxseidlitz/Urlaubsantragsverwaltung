@@ -70,18 +70,28 @@
             function updateUrlaubstage() {
                 var startdatum = new Date(document.getElementById('startdatum').value);
                 var enddatum = new Date(document.getElementById('enddatum').value);
-                var millisecondsPerDay = 24 * 60 * 60 * 1000;
-                var urlaubstage = Math.round((enddatum - startdatum) / millisecondsPerDay);
-                document.getElementById('urlaubstage').value = urlaubstage;
+                const oneDay = 24 * 60 * 60 * 1000; // One day in milliseconds
+                let weekdayCount = 0;
+                while (startdatum <= enddatum) {
+                    const dayOfWeek = startdatum.getDay(); // 0 for Sunday, 1 for Monday, ..., 6 for Saturday
+                    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                        // Count the day if it's not a weekend (Saturday or Sunday)
+                        weekdayCount++;
+                    }
+
+                    // Move to the next day
+                    startdatum = new Date(startdatum.getTime() + oneDay);
+                }
+                document.getElementById('urlaubstage').value = weekdayCount;
             }
         });
 
         document.getElementById('myForm').addEventListener('submit', function (event) {
-                // Add custom validation logic here
-                if (!validateForm()) {
-                    event.preventDefault(); // Prevent form submission
-                }
-            });
+            // Add custom validation logic here
+            if (!validateForm()) {
+                event.preventDefault(); // Prevent form submission
+            }
+        });
 
         function validateForm() {
             var personalnummer = document.getElementById('personalnummer').value;
