@@ -1,86 +1,28 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 require("dotenv").config();
-const pool = require("./db"); // Import the database connection
-const session = require("express-session");
+const pool = require("./config/db");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 const port = 3000;
-const saltRounds = 10; // The number of salt rounds
+const auth = require("./middleware/auth");
 
-// Function to generate a secure session key
-function generateSessionKey(length) {
-  return crypto.randomBytes(length).toString("hex");
-}
+app.use(bodyParser.urlencoded({ extended: false }), bodyParser.json());
 
 function generateSalt() {
+  const saltRounds = 10; // The number of salt rounds
   return crypto.randomBytes(saltRounds).toString("hex"); // Generate a 32-character hexadecimal salt
 }
 
-// Generate a session key of 64 characters
-const sessionKey = generateSessionKey(32);
-
-app.use(
-  session({
-    secret: sessionKey, // Change this to a strong and unique secret key
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false }, // Set to true for HTTPS
-  }),
-  bodyParser.urlencoded({ extended: false })
-);
-
-// If there is a site, that should be protected
-function requireAuth(req, res, next) {
-  if (req.session.user) {
-    next(); // User is authenticated, proceed to the route
-  } else {
-    res.redirect("h/public/login.html"); // Redirect to the login page if not authenticated
-  }
-}
-
-function getUserByUsername(username, callback) {
-  const query = "SELECT * FROM users WHERE username = $1";
-
-  pool.query(query, [username], (error, result) => {
-    if (error) {
-      console.error("Error getting user:", error);
-      callback(error, null);
-    } else {
-      if (result.rows.length === 0) {
-        // Username not found
-        console.error("Username not found");
-        callback(null, null);
-      } else {
-        return user = result.rows[0];
-        callback(null, user);
-      }
-    }
-  });
-}
-
-function authenticateUser(username, password) {
+async function authenticateUser(username) {
   return pool
     .query("SELECT * FROM users WHERE username = $1", [username])
     .then((result) => {
       if (result.rows.length === 1) {
-        const user = result.rows[0];
-        const storedHash = user.password_hash;
-        const saltedPassword = user.password_salt + password;
-
-        bcrypt.compare(saltedPassword, storedHash, (err, result) => {
-          if (err) {
-            console.error("Error comparing password:", err);
-          } else if (result) {
-            // Passwords match; user is authenticated
-            return user;
-          } else {
-            // Passwords do not match; authentication failed
-            return null;
-          }
-        });
+        return user = result.rows[0];
       } else {
         return null;
       }
@@ -90,36 +32,6 @@ function authenticateUser(username, password) {
       throw error;
     });
 }
-
-// Fetch user data (example)
-app.get('/users', (req, res) => {
-    // Implement logic to fetch user data from the database
-    const users = getUserByUsername(req.user);
-    res.json(users);
-});
-
-// Update user information (example)
-app.put('/users/:userId', (req, res) => {
-    const userId = req.params.userId;
-    const updatedUserData = req.body;
-
-    const insertQuery =
-      "INSERT INTO users (username, email, password_hash, password_salt, role, manager_id) VALUES ($1, $2, $3, $4, $5, $6)";
-    const values = [username, email, hash, salt, role, manager];
-
-    pool
-      .query(insertQuery, values)
-      .then(() => {
-        // Registration successful; redirect to a login page or success page
-        res.redirect("/public/login.html");
-      })
-      .catch((error) => {
-        console.error("Error inserting into database:", error);
-        res.status(500).send("Updating failed");
-      });
-
-    res.json({ success: true });
-});
 
 app.post("/register", (req, res) => {
   const { username, email, password, role, manager } = req.body;
@@ -144,24 +56,54 @@ app.post("/register", (req, res) => {
         .query(insertQuery, values)
         .then(() => {
           // Registration successful; redirect to a login page or success page
-          res.redirect("/public/login.html");
+          res.redirect("/login");
         })
         .catch((error) => {
           console.error("Error inserting into database:", error);
           res.status(500).send("Registration failed");
         });
+      res.status(201).json({ message: "User registered successfully" });
     }
   });
 });
 
-app.post("/login", (req, res) => {
-  // Authenticate the user (e.g., using the database interaction code from a previous response)
-  const user = authenticateUser();
-  if (user) {
-    req.session.user = user; // Store user data in the session
-    res.redirect("/protected/main.html"); // Redirect to the user's dashboard
-  } else {
-    res.status(401).send("Login failed. Bitte überprüfe deine Zugangsdaten.");
+app.post("/login", async (req, res) => {
+  try {
+    const username = req.body.username;
+    const password = req.body.password;
+    if (!(username && password)) {
+      res.status(400).send("All input is required");
+    }
+    // Validate if user exist in our database
+    const user = await authenticateUser(username);
+    const storedHash = user.password_hash;
+    const saltedPassword = user.password_salt + password;
+
+    if (user && (await bcrypt.compare(saltedPassword, storedHash))) {
+      // Create token
+      const token = jwt.sign(
+        {
+          user_id: user.user_id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+        },
+        process.env.TOKEN_SECRET,
+        {
+          expiresIn: "1h",
+        }
+      );
+
+      // save user token
+      user.token = token;
+
+      // user
+      res.status(200).json(user);
+    } else {
+      res.status(400).send("Invalid Credentials");
+    }
+  } catch (err) {
+    console.log(err);
   }
 });
 
@@ -170,21 +112,14 @@ app.get("/logout", (req, res) => {
     if (err) {
       console.error("Error destroying session:", err);
     }
-    res.redirect("/public/login"); // Redirect to the login page
+    res.redirect("/login"); // Redirect to the login page
   });
 });
 
 app.post("/process_form", (req, res) => {
-  const {
-    startdatum,
-    enddatum,
-    urlaubsart,
-    personalnummer,
-    urlaubstage,
-  } = req.body;
+  const { startdatum, enddatum, urlaubsart, personalnummer, urlaubstage } =
+    req.body;
 
-  // const user_id = getUserIDByUsername(username);
-  // const manager_id = getUserIDByUsername(username);
   const request_id = "req" + personalnummer + new Date();
   const status = "beantragt";
 
@@ -199,7 +134,7 @@ app.post("/process_form", (req, res) => {
       status,
       urlaubsart,
       "Aufgrund von Umzug",
-      3
+      3,
     ],
     (error, results) => {
       if (error) {
@@ -212,25 +147,37 @@ app.post("/process_form", (req, res) => {
   );
 });
 
-app.get("/protected/main.html", requireAuth, (req, res) => {
+app.get("/main", auth, (req, res) => {
   // Serve the protected HTML file
-  res.sendFile(__dirname + "/protected/main.html");
+  res.sendFile(__dirname + "/html/main.html");
 });
 
-app.get("/protected/antrag_stellen.html", requireAuth, (req, res) => {
+app.get("/antrag_stellen", auth, (req, res) => {
   // Serve the protected HTML file
-  res.sendFile(__dirname + "/protected/antrag_stellen.html");
+  res.sendFile(__dirname + "/html/antrag_stellen.html");
 });
 
-app.get("/public/login.html", (req, res) => {
+app.get("/login", (req, res) => {
   // Serve the protected HTML file
-  res.sendFile(__dirname + "/public/login.html");
+  res.sendFile(__dirname + "/html/login.html");
 });
 
 // Admin Panel route
-app.get("/protected/admin.html", (req, res) => {
+app.get("/admin", (req, res) => {
   // Serve the HTML file for the admin panel
-  res.sendFile(__dirname + "/protected/admin.html");
+  res.sendFile(__dirname + "/html/admin.html");
+});
+
+// This should be the last route else any after it won't work
+app.use("*", (req, res) => {
+  res.status(404).json({
+    success: "false",
+    message: "Page not found",
+    error: {
+      statusCode: 404,
+      message: "You reached a route that is not defined on this server",
+    },
+  });
 });
 
 app.listen(port, () => {
