@@ -1,10 +1,34 @@
 {
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
     "crypto": "^1.0.1",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-session": "^1.17.3",
+    "jsonwebtoken": "^9.0.2",
     "pg": "^8.11.3"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "devStart": "nodemon server.js"
+  },
+  "name": "urlaubsantragsverwaltung",
+  "description": "Die Urlaubsantragsverwaltung ist eine einfache Webanwendung zur Verwaltung von Urlaubsanträgen für Mitarbeiter. Sie ermöglicht das Einreichen, Bearbeiten und Prüfen von Urlaubsanträgen.",
+  "version": "1.0.0",
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maxseidlitz/Urlaubsantragsverwaltung.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/maxseidlitz/Urlaubsantragsverwaltung/issues"
+  },
+  "homepage": "https://github.com/maxseidlitz/Urlaubsantragsverwaltung#readme",
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }
