@@ -147,6 +147,10 @@ app.post("/process_form", (req, res) => {
   );
 });
 
+app.post("/get-user-role", (req, res) => {
+  console.log(req.body);
+});
+
 app.get("/main", auth, (req, res) => {
   // Serve the protected HTML file
   res.sendFile(__dirname + "/html/main.html");

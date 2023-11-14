@@ -26,7 +26,7 @@
         <div class="btn-group">
             <a href="antrag_stellen" class="btn btn-primary">Antrag stellen</a>
             <!-- Nur wenn Manager -> button sichtbar -->
-            <a href="antrag_pruefen" class="btn btn-success">Antrag prüfen</a> 
+            <a id="antragPruefenBtn" href="antrag_pruefen" class="btn btn-success" style="display: none;">Antrag prüfen</a> 
         </div>
     </div>
 
@@ -38,6 +38,29 @@
 
     <!-- Verknüpfung zu Bootstrap-JavaScript hinzufügen (optional) -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            try {
+                var role;
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Check if this is the cookie we're looking for
+                    if (cookie.startsWith('role' + '=')) {
+                        role = cookie.split('role=')[1];
+                    }
+                }
+                // Check if the user is a manager and show the button accordingly
+                if (role === 'Manager') {
+                    document.getElementById('antragPruefenBtn').style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error('Error getting user information:', error);
+            }
+        });
+    </script>
 </body>
 
 </html>
