@@ -50,16 +50,23 @@
 
                 if (response.ok) {
                     // If login is successful, extract the token
-                    const { token, role } = data;
+                    const { token, role, user_id } = data;
 
                     // Store the user in local storage
                     document.cookie = `role=${role}`
+
+                    // Store the user id in local storage
+                    document.cookie = `user_id=${user_id}`
 
                     // Store the token in local storage
                     document.cookie = `token=${token}`
 
                     // Redirect to the specified URL
-                    window.location.href = '/main';
+                    if (role === "Manager" || role === "User") {
+                        window.location.href = '/main';
+                    } else if (role === "Admin") {
+                        window.location.href = '/admin';
+                    }
                 } else {
                     // Handle login error
                     console.error(data.error);

@@ -8,7 +8,9 @@ const jwt = require("jsonwebtoken");
 
 const app = express();
 const port = 3000;
-const auth = require("./middleware/auth");
+const verifyToken = require("./middleware/verifyToken");
+const verifyAdmin = require("./middleware/verifyAdmin");
+const verifyManager = require("./middleware/verifyManager");
 
 app.use(bodyParser.urlencoded({ extended: false }), bodyParser.json());
 
@@ -22,7 +24,7 @@ async function authenticateUser(username) {
     .query("SELECT * FROM users WHERE username = $1", [username])
     .then((result) => {
       if (result.rows.length === 1) {
-        return user = result.rows[0];
+        return (user = result.rows[0]);
       } else {
         return null;
       }
@@ -32,6 +34,8 @@ async function authenticateUser(username) {
       throw error;
     });
 }
+
+// app POST
 
 app.post("/register", (req, res) => {
   const { username, email, password, role, manager } = req.body;
@@ -85,7 +89,6 @@ app.post("/login", async (req, res) => {
         {
           user_id: user.user_id,
           username: user.username,
-          email: user.email,
           role: user.role,
         },
         process.env.TOKEN_SECRET,
@@ -107,34 +110,29 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/logout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("Error destroying session:", err);
-    }
-    res.redirect("/login"); // Redirect to the login page
-  });
-});
-
 app.post("/process_form", (req, res) => {
-  const { startdatum, enddatum, urlaubsart, personalnummer, urlaubstage } =
-    req.body;
+  const {
+    startdatum,
+    enddatum,
+    urlaubsart,
+    personalnummer,
+    reason,
+    urlaubstage,
+  } = req.body;
 
-  const request_id = "req" + personalnummer + new Date();
   const status = "beantragt";
 
   pool.query(
-    "INSERT INTO public.vacation_request (request_id,user_id,start_date,end_date,vacation_days,status,vacation_type,reason,manager_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+    "INSERT INTO public.vacation_request (user_id,start_date,end_date,vacation_days,status,vacation_type,reason,manager_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
     [
-      request_id,
-      "1",
+      personalnummer,
       startdatum,
       enddatum,
       urlaubstage,
       status,
       urlaubsart,
-      "Aufgrund von Umzug",
-      3,
+      reason || "-",
+      2,
     ],
     (error, results) => {
       if (error) {
@@ -147,18 +145,46 @@ app.post("/process_form", (req, res) => {
   );
 });
 
-app.post("/get-user-role", (req, res) => {
-  console.log(req.body);
-});
+app.post(
+  "/get-vacation-requests/:user_id",
+  [verifyToken, verifyManager],
+  (req, res) => {
+    // Get vacation requests
+    const user_id = req.params.user_id;
+    try {
+      pool.query(
+        "SELECT * FROM public.vacation_request WHERE manager_id = $1 ORDER BY request_id",
+        [user_id],
+        (error, results) => {
+          if (error) {
+            console.error("Error getting data:", error);
+            res.status(500).send("Error getting data from the database");
+          } else {
+            res.status(200).json(results.rows);
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error getting request information:", error);
+    }
+  }
+);
 
-app.get("/main", auth, (req, res) => {
+// app GET
+
+app.get("/main", verifyToken, (req, res) => {
   // Serve the protected HTML file
   res.sendFile(__dirname + "/html/main.html");
 });
 
-app.get("/antrag_stellen", auth, (req, res) => {
+app.get("/antrag_stellen", verifyToken, (req, res) => {
   // Serve the protected HTML file
   res.sendFile(__dirname + "/html/antrag_stellen.html");
+});
+
+app.get("/antrag_pruefen", [verifyToken, verifyManager], (req, res) => {
+  // Serve the protected HTML file
+  res.sendFile(__dirname + "/html/antrag_pruefen.html");
 });
 
 app.get("/login", (req, res) => {
@@ -166,8 +192,17 @@ app.get("/login", (req, res) => {
   res.sendFile(__dirname + "/html/login.html");
 });
 
+app.get("/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Error destroying session:", err);
+    }
+    res.redirect("/login"); // Redirect to the login page
+  });
+});
+
 // Admin Panel route
-app.get("/admin", (req, res) => {
+app.get("/admin", [verifyToken, verifyAdmin], (req, res) => {
   // Serve the HTML file for the admin panel
   res.sendFile(__dirname + "/html/admin.html");
 });
