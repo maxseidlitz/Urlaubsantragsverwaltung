@@ -14,7 +14,7 @@
         <form id="myForm" action="http://localhost:3000/process_form" method="POST">
             <div class="form-group">
                 <label for="personalnummer">Personalnummer:</label>
-                <input type="text" class="form-control" id="personalnummer" name="personalnummer" required>
+                <input type="text" class="form-control" id="personalnummer" name="personalnummer" readonly>
             </div>
 
             <div class="form-group">
@@ -25,6 +25,11 @@
             <div class="form-group">
                 <label for="enddatum">Enddatum Urlaub:</label>
                 <input type="date" class="form-control" id="enddatum" name="enddatum" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="reason">Grund für den Urlaub:</label>
+                <input type="text" class="form-control" id="reason" name="reason">
             </div>
 
             <div class="form-group">
@@ -67,6 +72,17 @@
         document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('startdatum').addEventListener('change', updateUrlaubstage);
             document.getElementById('enddatum').addEventListener('change', updateUrlaubstage);
+
+            var user_id;
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Check if this is the cookie we're looking for
+                if (cookie.startsWith('user_id' + '=')) {
+                    user_id = cookie.split('user_id=')[1];
+                }
+            }
+            document.getElementById('personalnummer').value = user_id;
 
             function updateUrlaubstage() {
                 var startdatum = new Date(document.getElementById('startdatum').value);

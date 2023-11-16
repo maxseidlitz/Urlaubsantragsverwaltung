@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Urlaubsantragsverwaltung</title>
+    <!-- Verknüpfung zu Bootstrap-CSS hinzufügen -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="mt-4">Anträge prüfen</h1>
+        <p>Willkommen zur Antragsübersicht Ihrer Mitarbeiter.</p>
+
+        <!-- Display request list -->
+        <div id="requestList" class="mt-4">
+            <h2>Request List</h2>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Request ID</th>
+                            <th>User ID</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Vacation Days</th>
+                            <th>Vacation Type</th>
+                            <th>Status</th>
+                            <th>Reason</th>
+                            <th>Manager ID</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requestListBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <!-- Latest compiled and minified JavaScript -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+            crossorigin="anonymous"></script>
+
+        <!-- Bootstrap Modal for Confirmation -->
+        <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmationModalLabel">Confirmation</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Möchten Sie wirklich fortfahren?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                        <button type="button" class="btn btn-primary" id="confirmActionBtn">Bestätigen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', async function () {
+                try {
+                    var user_id;
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        // Check if this is the cookie we're looking for
+                        if (cookie.startsWith('user_id' + '=')) {
+                            user_id = cookie.split('user_id=')[1];
+                        }
+                    }
+                    // Get employees vacation_requests
+                    const response = await fetch(`/get-vacation-requests/${user_id}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        // Display the data in table -> rows with buttons for accepting and denying request
+                        const requestListBody = document.getElementById('requestListBody');
+                        data.forEach(request => {
+                            // Determine the button class and label based on the request status
+                            const buttonClass = request.status === 'Pending' ? 'btn btn-success' : 'btn btn-secondary';
+                            const buttonText = request.status === 'Pending' ? 'Freigeben' : 'Bearbeitet';
+
+                            requestListBody.innerHTML += `
+                                <tr>
+                                    <td>${request.request_id}</td>
+                                    <td>${request.user_id}</td>
+                                    <td>${request.start_date}</td>
+                                    <td>${request.end_date}</td>
+                                    <td>${request.vacation_days}</td>
+                                    <td>${request.vacation_type}</td>
+                                    <td>${request.status}</td>
+                                    <td>${request.reason}</td>
+                                    <td>${request.manager_id}</td>
+                                    <td>
+                                        <button class="btn btn-success" onclick="showConfirmationModal('Freigeben', ${request.request_id})">Freigeben</button>
+                                        <button class="btn btn-danger" onclick="showConfirmationModal('Ablehnen', ${request.request_id})">Ablehnen</button>
+                                    </td>
+                                </tr>`;
+                        });
+
+
+                    } else {
+                        // Handle login error
+                        console.error(data.error);
+                    }
+                } catch (error) {
+                    console.error('Error getting user information:', error);
+                }
+            });
+
+            // Enable Bootstrap modals
+            var confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+
+            // Set up event listener for the confirm action button
+            document.getElementById('confirmActionBtn').addEventListener('click', confirmAction);
+
+            function showConfirmationModal(action, requestId) {
+                // Set the modal content based on the chosen action
+                const modalBody = document.querySelector('#confirmationModal .modal-body');
+                modalBody.innerHTML = `Sind Sie sicher, dass sie den Urlaubsantrag <b>${requestId}</b> ${action.toLowerCase()} möchten?`;
+                
+                // Set the button color and label based on the chosen action
+                const confirmActionBtn = document.getElementById('confirmActionBtn');
+                confirmActionBtn.classList.remove('btn-success', 'btn-danger'); // Remove existing classes
+                confirmActionBtn.classList.add(action === 'Freigeben' ? 'btn-success' : 'btn-danger');
+                confirmActionBtn.textContent = action;
+                
+                // Show the modal
+                confirmationModal.show();
+
+                // Attach additional data to the confirm button for later use
+                confirmActionBtn.dataset.action = action;
+                confirmActionBtn.dataset.requestId = requestId;
+            }
+
+            function confirmAction() {
+                // Retrieve additional data from the confirm button
+                const action = document.getElementById('confirmActionBtn').dataset.action;
+                const requestId = document.getElementById('confirmActionBtn').dataset.requestId;
+                var user_id;
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Check if this is the cookie we're looking for
+                    if (cookie.startsWith('user_id' + '=')) {
+                        user_id = cookie.split('user_id=')[1];
+                    }
+                }
+                // Perform the desired action (approve or decline)
+                console.log(`User confirmed ${action} for request ${requestId}`);
+
+                // Close the modal
+                confirmationModal.hide();
+            }
+        </script>
+</body>
+
+</html>
