@@ -1,4 +1,5 @@
 const express = require("express");
+const moment = require("moment");
 const bodyParser = require("body-parser");
 require("dotenv").config();
 const pool = require("./config/db");
@@ -8,6 +9,7 @@ const jwt = require("jsonwebtoken");
 
 const app = express();
 const port = 3000;
+moment.locale('de');
 const verifyToken = require("./middleware/verifyToken");
 const verifyAdmin = require("./middleware/verifyAdmin");
 const verifyManager = require("./middleware/verifyManager");
@@ -160,6 +162,12 @@ app.post(
             console.error("Error getting data:", error);
             res.status(500).send("Error getting data from the database");
           } else {
+            results.rows.forEach(row => {
+              start = moment(new Date(row.start_date), 'DD.MM.YYYY', true).format('L');
+              end = moment(new Date(row.end_date), "DD.MM.YYYY", true).format('L');
+              row.start_date = start;
+              row.end_date = end;
+            });
             res.status(200).json(results.rows);
           }
         }
