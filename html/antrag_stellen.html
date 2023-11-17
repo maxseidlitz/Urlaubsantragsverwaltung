@@ -29,7 +29,7 @@
             
             <div class="form-group">
                 <label for="reason">Grund für den Urlaub:</label>
-                <input type="text" class="form-control" id="reason" name="reason">
+                <input type="text" class="form-control" id="reason" name="reason" placeholder="freilassen wenn irrelevant">
             </div>
 
             <div class="form-group">
@@ -59,8 +59,15 @@
                 <div class="form-check">
                     <input type="radio" class="form-check-input" id="ueberstundenausgleich" name="urlaubsart"
                         value="Ueberstundenausgleich">
-                    <label class="form-check-label" for="normalerUrlaub">Überstundenausgleich</label>
+                    <label class="form-check-label" for="ueberstundenausgleich">Überstundenausgleich</label>
                 </div>
+
+                <div class="form-check">
+                    <input type="radio" class="form-check-input" id="sonderurlaub" name="urlaubsart"
+                        value="Sonderurlaub">
+                    <label class="form-check-label" for="sonderurlaub">Sonderurlaub</label>
+                </div>
+
             </div>
 
             <button type="submit" class="btn btn-primary">Antrag abschicken</button>
