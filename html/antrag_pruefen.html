@@ -30,6 +30,7 @@
                             <th>Status</th>
                             <th>Reason</th>
                             <th>Manager ID</th>
+                            <th>Aktion</th>
                         </tr>
                     </thead>
                     <tbody id="requestListBody"></tbody>
@@ -130,13 +131,13 @@
                 // Set the modal content based on the chosen action
                 const modalBody = document.querySelector('#confirmationModal .modal-body');
                 modalBody.innerHTML = `Sind Sie sicher, dass sie den Urlaubsantrag <b>${requestId}</b> ${action.toLowerCase()} möchten?`;
-                
+
                 // Set the button color and label based on the chosen action
                 const confirmActionBtn = document.getElementById('confirmActionBtn');
                 confirmActionBtn.classList.remove('btn-success', 'btn-danger'); // Remove existing classes
                 confirmActionBtn.classList.add(action === 'Freigeben' ? 'btn-success' : 'btn-danger');
                 confirmActionBtn.textContent = action;
-                
+
                 // Show the modal
                 confirmationModal.show();
 
@@ -145,10 +146,10 @@
                 confirmActionBtn.dataset.requestId = requestId;
             }
 
-            function confirmAction() {
+            async function confirmAction() {
                 // Retrieve additional data from the confirm button
                 const action = document.getElementById('confirmActionBtn').dataset.action;
-                const requestId = document.getElementById('confirmActionBtn').dataset.requestId;
+                const request_id = document.getElementById('confirmActionBtn').dataset.requestId;
                 var user_id;
                 const cookies = document.cookie.split(';');
                 for (let i = 0; i < cookies.length; i++) {
@@ -158,11 +159,29 @@
                         user_id = cookie.split('user_id=')[1];
                     }
                 }
-                // Perform the desired action (approve or decline)
-                console.log(`User confirmed ${action} for request ${requestId}`);
+                // Get employees vacation_requests
+                const response = await fetch(`/request-response`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ user_id, action, request_id }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+
+                    // Redirect to the specified URL
+                    window.location.href = '/main';
+                } else {
+                    // Handle login error
+                    console.error(data.error);
+                }
 
                 // Close the modal
                 confirmationModal.hide();
+                updateRows();
             }
         </script>
 </body>

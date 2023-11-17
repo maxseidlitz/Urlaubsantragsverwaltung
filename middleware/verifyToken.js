@@ -4,7 +4,7 @@ const config = process.env;
 
 const verifyToken = (req, res, next) => {
   const cookieArray = req.headers.cookie.split(";");
-  const token = cookieArray[0].split("token=")[1];
+  const token = cookieArray[2].split("token=")[1];
 
   if (!token) {
     return res.status(403).send("A token is required for authentication");

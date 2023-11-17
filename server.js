@@ -162,19 +162,71 @@ app.post(
             console.error("Error getting data:", error);
             res.status(500).send("Error getting data from the database");
           } else {
-            results.rows.forEach(row => {
-              start = moment(new Date(row.start_date), 'DD.MM.YYYY', true).format('L');
-              end = moment(new Date(row.end_date), "DD.MM.YYYY", true).format('L');
-              row.start_date = start;
-              row.end_date = end;
-            });
+              results.rows.forEach((row) => {
+                if (row.status == "freigegeben" || row.status == "abgelehnt") {
+                  results.rows.splice(row, 1);
+                  console.log(results.rows);
+                  return;
+                }
+                start = moment(
+                  new Date(row.start_date),
+                  "DD.MM.YYYY",
+                  true
+                ).format("L");
+                end = moment(new Date(row.end_date), "DD.MM.YYYY", true).format(
+                  "L"
+                );
+                row.start_date = start;
+                row.end_date = end;
+              });
+            }
             res.status(200).json(results.rows);
           }
-        }
       );
     } catch (error) {
       console.error("Error getting request information:", error);
     }
+  }
+);
+
+app.post(
+  "/request-response",
+  [verifyToken, verifyManager],
+  (req, res) => {
+    // Get vacation requests
+    const user_id = req.body.user_id;
+    const action = req.body.action;
+    const request_id = req.body.request_id;
+    console.log(user_id);
+    console.log(action);
+    console.log(request_id);
+    if (!(user_id && action && request_id)) {
+      res.status(400).send("All data is required");
+    }
+    var status = 'empty';
+    if (action === "Freigeben") {
+      status = "freigegeben";
+    } else if (action === "Ablehnen") {
+      status = "abgelehnt";
+    }
+    if (action) {
+      try {
+        pool.query(
+          "UPDATE public.vacation_request SET status = $1 WHERE manager_id = $2 AND request_id=$3;",
+          [status, user_id, request_id],
+          (error, results) => {
+            if (error) {
+              console.error("Error getting data:", error);
+              res.status(500).send("Error getting data from the database");
+            } else {
+              res.status(200).send("Request was successfully updated");
+            }
+          }
+        );
+      } catch (error) {
+        console.error("Error getting request information:", error);
+      }
+    } else if (!action) {console.log("Updating request was not possible");}
   }
 );
 
