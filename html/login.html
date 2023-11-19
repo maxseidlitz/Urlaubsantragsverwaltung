@@ -50,13 +50,16 @@
 
                 if (response.ok) {
                     // If login is successful, extract the token
-                    const { token, role, user_id } = data;
+                    const { token, role, user_id, username } = data;
 
                     // Store the user in local storage
                     document.cookie = `role=${role}`
 
                     // Store the user id in local storage
                     document.cookie = `user_id=${user_id}`
+
+                    // Store the username in local storage
+                    document.cookie = `username=${username}`
 
                     // Store the token in local storage
                     document.cookie = `token=${token}`
