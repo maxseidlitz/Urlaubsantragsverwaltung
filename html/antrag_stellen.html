@@ -117,10 +117,11 @@
             }
         });
 
-        function validateForm() {
+        async function validateForm() {
             var personalnummer = document.getElementById('personalnummer').value;
             var startdatum = document.getElementById('startdatum').value;
             var enddatum = document.getElementById('enddatum').value;
+            var enddatum = document.getElementById('urlaubstage').value;
             // Add more fields as needed
 
             // Check if personalnummer is a number
@@ -145,6 +146,37 @@
             if (new Date(enddatum) < new Date()) {
                 alert('Das Enddatum muss mindestens morgen sein.');
                 return false;
+            }
+
+            // Check if you have enough days left
+            var user_id;
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Check if this is the cookie we're looking for
+                if (cookie.startsWith('user_id' + '=')) {
+                    role = cookie.split('user_id=')[1];
+                }
+            }
+
+            const response = await fetch(`/get-left-vacation-days/${user_id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Extract the remaining days left for vacation
+                const { remDays } = data;
+                const daysLeft = remDays - urlaubstage;
+
+                if (daysLeft <= 0) {
+                    alert('Das Enddatum muss mindestens morgen sein.');
+                    return false;
+                }
             }
 
             // Add more validation logic as needed

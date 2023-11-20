@@ -11,26 +11,170 @@
 </head>
 
 <body>
-    <h1>User Management</h1>
+    <style>
+        /* Style for user information */
+        
+    </style>
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h1 class="mt-4">Nutzerübersicht</h1>
+                <p>Willkommen zur Nutzerübersicht.</p>
+            </div>
+            <!-- User information section -->
+            <div id="newuser" class="col d-flex align-items-center justify-content-end">
+                <button type="button" class="btn btn-primary" id="newUserBtn" onclick="showNewUserModal()">Neuer Nutzer</button>
+            </div>
+        </div>
 
-    <!-- Display user list -->
-    <div id="userList"></div>
+        <!-- Display request list -->
+        <div id="requestList" class="mt-4">
+            <h2>Request List</h2>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Nutzername</th>
+                            <th>E-Mail</th>
+                            <th>Rolle</th>
+                            <th>Manager ID</th>
+                            <th>Aktion</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requestListBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <!-- Latest compiled and minified JavaScript -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+            crossorigin="anonymous"></script>
+
+        <!-- Bootstrap Modal for Confirmation -->
+        <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmationModalLabel">Confirmation</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Möchten Sie wirklich fortfahren?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                        <button type="button" class="btn btn-primary" id="confirmActionBtn">Bestätigen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- JavaScript to fetch and display user data -->
     <script>
         // Fetch user data from the server
-        fetch('/api/users')
-            .then(response => response.json())
-            .then(users => {
-                // Display user data in the userList div
-                const userListDiv = document.getElementById('userList');
-                userListDiv.innerHTML = '<h2>User List</h2>';
-
-                users.forEach(user => {
-                    userListDiv.innerHTML += `<p>${user.username} - ${user.email} - ${user.role}</p>`;
+        document.addEventListener('DOMContentLoaded', async function () {
+            try {
+                // Get employees
+                const response = await fetch(`/get-all-user/all`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                 });
-            })
-            .catch(error => console.error('Error fetching user data:', error));
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Display the data in table -> rows with buttons for accepting and denying request
+                    const requestListBody = document.getElementById('requestListBody');
+                    data.forEach(request => {
+                        if (request.user_id) {
+                            requestListBody.innerHTML += `
+                                <tr>
+                                    <td>${request.user_id}</td>
+                                    <td>${request.username}</td>
+                                    <td>${request.email}</td>
+                                    <td>${request.role}</td>
+                                    <td>${request.manager_id}</td>
+                                    <td>
+                                        <button class="btn btn-success" onclick="showConfirmationModal('Bearbeiten', ${request.user_id})">Bearbeiten</button>
+                                        <button class="btn btn-danger" onclick="showConfirmationModal('Löschen', ${request.user_id})">Löschen</button>
+                                    </td>
+                                </tr>`;
+                        }
+                    });
+
+
+                } else {
+                    // Handle login error
+                    console.error(data.error);
+                }
+            } catch (error) {
+                console.error('Error getting user information:', error);
+            }
+        });
+
+        // Enable Bootstrap modals
+        var confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+
+        // Set up event listener for the confirm action button
+        document.getElementById('confirmActionBtn').addEventListener('click', confirmAction);
+
+        function showConfirmationModal(action, userId) {
+            // Set the modal content based on the chosen action
+            const modalBody = document.querySelector('#confirmationModal .modal-body');
+            modalBody.innerHTML = `Sind Sie sicher, dass sie den Nutzer <b>${userId}</b> ${action.toLowerCase()} möchten?`;
+
+            // Set the button color and label based on the chosen action
+            const confirmActionBtn = document.getElementById('confirmActionBtn');
+            confirmActionBtn.classList.remove('btn-success', 'btn-danger'); // Remove existing classes
+            confirmActionBtn.classList.add(action === 'Bearbeiten' ? 'btn-success' : 'btn-danger');
+            confirmActionBtn.textContent = action;
+
+            // Show the modal
+            confirmationModal.show();
+
+            // Attach additional data to the confirm button for later use
+            confirmActionBtn.dataset.action = action;
+            confirmActionBtn.dataset.userId = userId;
+        }
+
+        async function confirmAction() {
+            // Retrieve additional data from the confirm button
+            const action = document.getElementById('confirmActionBtn').dataset.action;
+            const userId = document.getElementById('confirmActionBtn').dataset.userId;
+
+            if (action === "Delete") {
+                const response = await fetch(`/delete-user`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ user_id }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+
+                    // Redirect to the specified URL
+                    window.location.href = '/admin';
+                } else {
+                    // Handle login error
+                    console.error(data.error);
+                }
+
+                // Close the modal
+                confirmationModal.hide();
+            } else if (action === "Bearbeiten") {
+                // open edit modal for user data editing
+                console.log("editing user data happens here!");
+            }
+        }
     </script>
 </body>
 

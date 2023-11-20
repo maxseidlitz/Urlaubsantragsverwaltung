@@ -21,14 +21,14 @@
                 <table class="table table-bordered">
                     <thead>
                         <tr>
-                            <th>Request ID</th>
+                            <th>Anfrage ID</th>
                             <th>User ID</th>
-                            <th>Start Date</th>
-                            <th>End Date</th>
-                            <th>Vacation Days</th>
-                            <th>Vacation Type</th>
+                            <th>Start Datum</th>
+                            <th>End Datum</th>
+                            <th>Angefragte Urlaubstage</th>
+                            <th>Urlaubsart</th>
                             <th>Status</th>
-                            <th>Reason</th>
+                            <th>Grund</th>
                             <th>Manager ID</th>
                             <th>Aktion</th>
                         </tr>
@@ -62,37 +62,36 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <script>
-            document.addEventListener('DOMContentLoaded', async function () {
-                try {
-                    var user_id;
-                    const cookies = document.cookie.split(';');
-                    for (let i = 0; i < cookies.length; i++) {
-                        const cookie = cookies[i].trim();
-                        // Check if this is the cookie we're looking for
-                        if (cookie.startsWith('user_id' + '=')) {
-                            user_id = cookie.split('user_id=')[1];
-                        }
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            try {
+                var user_id;
+                var role;
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Check if this is the cookie we're looking for
+                    if (cookie.startsWith('user_id' + '=')) {
+                        user_id = cookie.split('user_id=')[1];
                     }
-                    // Get employees vacation_requests
-                    const response = await fetch(`/get-vacation-requests/${user_id}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                    });
+                }
+                // Get employees vacation_requests
+                const response = await fetch(`/get-employee-requests/${user_id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
 
-                    const data = await response.json();
+                const data = await response.json();
 
-                    if (response.ok) {
-                        // Display the data in table -> rows with buttons for accepting and denying request
-                        const requestListBody = document.getElementById('requestListBody');
-                        data.forEach(request => {
-                            // Determine the button class and label based on the request status
-                            const buttonClass = request.status === 'Pending' ? 'btn btn-success' : 'btn btn-secondary';
-                            const buttonText = request.status === 'Pending' ? 'Freigeben' : 'Bearbeitet';
-
+                if (response.ok) {
+                    // Display the data in table -> rows with buttons for accepting and denying request
+                    const requestListBody = document.getElementById('requestListBody');
+                    data.forEach(request => {
+                        if (request.request_id) {
                             requestListBody.innerHTML += `
                                 <tr>
                                     <td>${request.request_id}</td>
@@ -109,81 +108,81 @@
                                         <button class="btn btn-danger" onclick="showConfirmationModal('Ablehnen', ${request.request_id})">Ablehnen</button>
                                     </td>
                                 </tr>`;
-                        });
+                        }
+                    });
 
 
-                    } else {
-                        // Handle login error
-                        console.error(data.error);
-                    }
-                } catch (error) {
-                    console.error('Error getting user information:', error);
-                }
-            });
-
-            // Enable Bootstrap modals
-            var confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
-
-            // Set up event listener for the confirm action button
-            document.getElementById('confirmActionBtn').addEventListener('click', confirmAction);
-
-            function showConfirmationModal(action, requestId) {
-                // Set the modal content based on the chosen action
-                const modalBody = document.querySelector('#confirmationModal .modal-body');
-                modalBody.innerHTML = `Sind Sie sicher, dass sie den Urlaubsantrag <b>${requestId}</b> ${action.toLowerCase()} möchten?`;
-
-                // Set the button color and label based on the chosen action
-                const confirmActionBtn = document.getElementById('confirmActionBtn');
-                confirmActionBtn.classList.remove('btn-success', 'btn-danger'); // Remove existing classes
-                confirmActionBtn.classList.add(action === 'Freigeben' ? 'btn-success' : 'btn-danger');
-                confirmActionBtn.textContent = action;
-
-                // Show the modal
-                confirmationModal.show();
-
-                // Attach additional data to the confirm button for later use
-                confirmActionBtn.dataset.action = action;
-                confirmActionBtn.dataset.requestId = requestId;
-            }
-
-            async function confirmAction() {
-                // Retrieve additional data from the confirm button
-                const action = document.getElementById('confirmActionBtn').dataset.action;
-                const request_id = document.getElementById('confirmActionBtn').dataset.requestId;
-                var user_id;
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    // Check if this is the cookie we're looking for
-                    if (cookie.startsWith('user_id' + '=')) {
-                        user_id = cookie.split('user_id=')[1];
-                    }
-                }
-                // Get employees vacation_requests
-                const response = await fetch(`/request-response`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ user_id, action, request_id }),
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-
-                    // Redirect to the specified URL
-                    window.location.href = '/main';
                 } else {
                     // Handle login error
                     console.error(data.error);
                 }
-
-                // Close the modal
-                confirmationModal.hide();
-                updateRows();
+            } catch (error) {
+                console.error('Error getting user information:', error);
             }
-        </script>
+        });
+
+        // Enable Bootstrap modals
+        var confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+
+        // Set up event listener for the confirm action button
+        document.getElementById('confirmActionBtn').addEventListener('click', confirmAction);
+
+        function showConfirmationModal(action, requestId) {
+            // Set the modal content based on the chosen action
+            const modalBody = document.querySelector('#confirmationModal .modal-body');
+            modalBody.innerHTML = `Sind Sie sicher, dass sie den Urlaubsantrag <b>${requestId}</b> ${action.toLowerCase()} möchten?`;
+
+            // Set the button color and label based on the chosen action
+            const confirmActionBtn = document.getElementById('confirmActionBtn');
+            confirmActionBtn.classList.remove('btn-success', 'btn-danger'); // Remove existing classes
+            confirmActionBtn.classList.add(action === 'Freigeben' ? 'btn-success' : 'btn-danger');
+            confirmActionBtn.textContent = action;
+
+            // Show the modal
+            confirmationModal.show();
+
+            // Attach additional data to the confirm button for later use
+            confirmActionBtn.dataset.action = action;
+            confirmActionBtn.dataset.requestId = requestId;
+        }
+
+        async function confirmAction() {
+            // Retrieve additional data from the confirm button
+            const action = document.getElementById('confirmActionBtn').dataset.action;
+            const request_id = document.getElementById('confirmActionBtn').dataset.requestId;
+            var user_id;
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Check if this is the cookie we're looking for
+                if (cookie.startsWith('user_id' + '=')) {
+                    user_id = cookie.split('user_id=')[1];
+                }
+            }
+            const response = await fetch(`/manager-response`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ user_id, action, request_id }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+
+                // Redirect to the specified URL
+                window.location.href = '/main';
+            } else {
+                // Handle login error
+                console.error(data.error);
+            }
+
+            // Close the modal
+            confirmationModal.hide();
+            updateRows();
+        }
+    </script>
 </body>
 
 </html>
