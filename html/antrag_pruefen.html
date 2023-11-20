@@ -6,13 +6,14 @@
     <!-- Verknüpfung zu Bootstrap-CSS hinzufügen -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css' rel='stylesheet'>
 
 </head>
 
 <body>
     <style>
         #calendar {
-            width: 400px; 
+            width: 400px;
             height: 400px;
         }
     </style>
@@ -70,8 +71,29 @@
                         Möchten Sie wirklich fortfahren?
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                            id="cancelBtn">Schließen</button>
                         <button type="button" class="btn btn-primary" id="confirmActionBtn">Bestätigen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bootstrap Modal for Editing -->
+        <div class="modal fade" id="editingModal" tabindex="-1" aria-labelledby="editingModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editingModalLabel">Bearbeiten</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Möchten Sie wirklich fortfahren?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal"
+                            id="denyBtn" onclick="editAction('Ablehnen')">Ablehnen</button>
+                        <button type="button" class="btn btn-success" id="confirmBtn" onclick="editAction('Ablehnen')">Freigeben</button>
                     </div>
                 </div>
             </div>
@@ -111,11 +133,13 @@
                     // format data for FullCalendar
                     var events = [];
                     data.forEach(request => {
-                        if (request.request_id && request.status === "genommen" || request.status === "beantragt") {
+                        if (request.request_id && request.status === "genommen" || request.status === "beantragt" || request.status === "freigegeben") {
                             var color = '';
                             if (request.status === "genommen") {
                                 color = 'grey';
                             } else if (request.status === "beantragt") {
+                                color = 'orange';
+                            } else if (request.status === "freigegeben") {
                                 color = 'green';
                             }
                             // Parse the date string using moment
@@ -124,26 +148,27 @@
 
                             ev = {
                                 id: request.request_id,
+                                allDay: true,
                                 start: startDate.toDate(),
                                 end: endDate.toDate(),
                                 title: request.vacation_type,
                                 backgroundColor: color,
                                 display: 'background',
-                                editable: 'false',
                             };
                             events.push(ev);
                         }
                     });
-                    console.log(events);
                     // Initialize FullCalendar
                     $('#calendar').fullCalendar({
+                        height: 'auto',
+                        editable: false,
                         events: events, // Your array of events from the server
                     });
 
                     // Display the data in table -> rows with buttons for accepting and denying request
                     const requestListBody = document.getElementById('requestListBody');
                     data.forEach(request => {
-                        if (request.request_id) {
+                        if (request.request_id && request.status === "beantragt") {
                             requestListBody.innerHTML += `
                                 <tr>
                                     <td>${request.request_id}</td>
@@ -158,6 +183,22 @@
                                     <td>
                                         <button class="btn btn-success" onclick="showConfirmationModal('Freigeben', ${request.request_id})">Freigeben</button>
                                         <button class="btn btn-danger" onclick="showConfirmationModal('Ablehnen', ${request.request_id})">Ablehnen</button>
+                                    </td>
+                                </tr>`;
+                        } else if (request.request_id) {
+                            requestListBody.innerHTML += `
+                                <tr>
+                                    <td>${request.request_id}</td>
+                                    <td>${request.user_id}</td>
+                                    <td>${request.start_date}</td>
+                                    <td>${request.end_date}</td>
+                                    <td>${request.vacation_days}</td>
+                                    <td>${request.vacation_type}</td>
+                                    <td>${request.status}</td>
+                                    <td>${request.reason}</td>
+                                    <td>${request.manager_id}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" onclick="showEditModal(${request.request_id})">Bearbeiten</button>
                                     </td>
                                 </tr>`;
                         }
@@ -197,8 +238,8 @@
         }
 
         async function confirmAction() {
-            // Retrieve additional data from the confirm button
-            const action = document.getElementById('confirmActionBtn').dataset.action;
+            // Retrieve additional data from the button
+            const action = document.getElementById('confirmBtn').dataset.action;
             const request_id = document.getElementById('confirmActionBtn').dataset.requestId;
             var user_id;
             const cookies = document.cookie.split(';');
@@ -223,6 +264,54 @@
             } else {
                 // Handle login error
                 console.error(data.error);
+            }
+        }
+
+        var editingModal = new bootstrap.Modal(document.getElementById('editingModal'));
+
+        function showEditModal(requestId) {
+            // Set the modal content based on the chosen action
+            const modalBody = document.querySelector('#editingModal .modal-body');
+            modalBody.innerHTML = `Welche Aktion wollen Sie für den Urlaubsantrag <b>${requestId}</b> vornehmen?`;
+
+            // Set the button color and label based on the chosen action
+            const confirmBtn = document.getElementById('confirmBtn');
+            const denyBtn = document.getElementById('denyBtn');
+
+            // Show the modal
+            editingModal.show();
+
+            // Attach additional data to the confirm button for later use
+            confirmBtn.dataset.requestId = requestId;
+            denyBtn.dataset.requestId = requestId;
+        }
+
+        async function editAction(action) {
+            // Retrieve additional data from the confirm button
+            const request_id = document.getElementById('confirmActionBtn').dataset.requestId;
+            var user_id;
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Check if this is the cookie we're looking for
+                if (cookie.startsWith('user_id' + '=')) {
+                    user_id = cookie.split('user_id=')[1];
+                }
+            }
+            const response = await fetch(`/manager-response`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ user_id, action, request_id }),
+            });
+
+            if (response.ok) {
+                editingModal.hide();
+                location.reload();
+            } else {
+                // Handle login error
+                console.error(response);
             }
         }
     </script>
