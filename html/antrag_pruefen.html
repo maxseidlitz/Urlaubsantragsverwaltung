@@ -10,9 +10,23 @@
 </head>
 
 <body>
+    <style>
+        #calendar {
+            width: 400px; 
+            height: 400px;
+        }
+    </style>
     <div class="container">
-        <h1 class="mt-4">Anträge prüfen</h1>
-        <p>Willkommen zur Antragsübersicht Ihrer Mitarbeiter.</p>
+        <div class="row">
+            <div class="col">
+                <h1 class="mt-4">Anträge prüfen</h1>
+                <p>Willkommen zur Antragsübersicht Ihrer Mitarbeiter.</p>
+            </div>
+            <!-- User information section -->
+            <div id="calendar-container" class="col d-flex align-items-center justify-content-end">
+                <div id="calendar"></div>
+            </div>
+        </div>
 
         <!-- Display request list -->
         <div id="requestList" class="mt-4">
@@ -64,6 +78,12 @@
         </div>
     </div>
 
+    <!-- Add FullCalendar CSS and JS files -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+
+
     <script>
         document.addEventListener('DOMContentLoaded', async function () {
             try {
@@ -88,6 +108,38 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    // format data for FullCalendar
+                    var events = [];
+                    data.forEach(request => {
+                        if (request.request_id && request.status === "genommen" || request.status === "beantragt") {
+                            var color = '';
+                            if (request.status === "genommen") {
+                                color = 'grey';
+                            } else if (request.status === "beantragt") {
+                                color = 'green';
+                            }
+                            // Parse the date string using moment
+                            const startDate = moment(request.start_date, "DD.MM.YYYY");
+                            const endDate = moment(request.end_date, "DD.MM.YYYY");
+
+                            ev = {
+                                id: request.request_id,
+                                start: startDate.toDate(),
+                                end: endDate.toDate(),
+                                title: request.vacation_type,
+                                backgroundColor: color,
+                                display: 'background',
+                                editable: 'false',
+                            };
+                            events.push(ev);
+                        }
+                    });
+                    console.log(events);
+                    // Initialize FullCalendar
+                    $('#calendar').fullCalendar({
+                        events: events, // Your array of events from the server
+                    });
+
                     // Display the data in table -> rows with buttons for accepting and denying request
                     const requestListBody = document.getElementById('requestListBody');
                     data.forEach(request => {
@@ -110,8 +162,6 @@
                                 </tr>`;
                         }
                     });
-
-
                 } else {
                     // Handle login error
                     console.error(data.error);
@@ -167,20 +217,13 @@
                 body: JSON.stringify({ user_id, action, request_id }),
             });
 
-            const data = await response.json();
-
             if (response.ok) {
-
-                // Redirect to the specified URL
-                window.location.href = '/main';
+                confirmationModal.hide();
+                location.reload();
             } else {
                 // Handle login error
                 console.error(data.error);
             }
-
-            // Close the modal
-            confirmationModal.hide();
-            updateRows();
         }
     </script>
 </body>

@@ -79,7 +79,7 @@
         document.addEventListener('DOMContentLoaded', async function () {
             try {
                 // Get employees
-                const response = await fetch(`/get-all-user/all`, {
+                const response = await fetch(`/get-all-users/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -157,12 +157,9 @@
                     body: JSON.stringify({ user_id }),
                 });
 
-                const data = await response.json();
-
                 if (response.ok) {
-
-                    // Redirect to the specified URL
-                    window.location.href = '/admin';
+                    confirmationModal.hide();
+                    location.reload();
                 } else {
                     // Handle login error
                     console.error(data.error);
