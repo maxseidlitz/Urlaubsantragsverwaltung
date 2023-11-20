@@ -150,16 +150,9 @@ app.post("/process_form", (req, res) => {
 app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
   // Get vacation requests
   const user_id = req.params.user_id;
-  const { role } = req.body;
-  var r = "role";
-  if (role === "Manager") {
-    r = "manager_id";
-  } else if (role === "User") {
-    r = "user_id";
-  }
   try {
     pool.query(
-      `SELECT * FROM public.vacation_request WHERE ${r} = ${user_id} ORDER BY request_id`,
+      `SELECT * FROM public.vacation_request WHERE user_id = ${user_id} ORDER BY request_id`,
       (error, results) => {
         if (error) {
           console.error("Error getting data:", error);
@@ -184,7 +177,49 @@ app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
             }
           });
           daysObj = {
-            'days': 30 - days,
+            days: 30 - days,
+          };
+          results.rows.push(daysObj);
+          res.status(200).json(results.rows);
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Error getting request information:", error);
+  }
+});
+
+app.post("/get-employee-requests/:user_id", [verifyToken, verifyManager], (req, res) => {
+  // Get vacation requests
+  const user_id = req.params.user_id;
+  try {
+    pool.query(
+      `SELECT * FROM public.vacation_request WHERE manager_id = ${user_id} ORDER BY request_id`,
+      (error, results) => {
+        if (error) {
+          console.error("Error getting data:", error);
+          res.status(500).send("Error getting data from the database");
+        } else {
+          var days = 0;
+          results.rows.forEach((row) => {
+            const start = moment(
+              new Date(row.start_date),
+              "DD.MM.YYYY",
+              true
+            ).format("L");
+            const end = moment(
+              new Date(row.end_date),
+              "DD.MM.YYYY",
+              true
+            ).format("L");
+            row.start_date = start;
+            row.end_date = end;
+            if (row.status === "freigegeben" || row.status === "genommen") {
+              days = row.vacation_days + days;
+            }
+          });
+          daysObj = {
+            days: 30 - days,
           };
           results.rows.push(daysObj);
           res.status(200).json(results.rows);

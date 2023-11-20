@@ -76,17 +76,13 @@
                     if (cookie.startsWith('user_id' + '=')) {
                         user_id = cookie.split('user_id=')[1];
                     }
-                    if (cookie.startsWith('role' + '=')) {
-                        role = cookie.split('role=')[1];
-                    }
                 }
                 // Get employees vacation_requests
-                const response = await fetch(`/get-vacation-requests/${user_id}`, {
+                const response = await fetch(`/get-employee-requests/${user_id}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ role }),
                 });
 
                 const data = await response.json();
