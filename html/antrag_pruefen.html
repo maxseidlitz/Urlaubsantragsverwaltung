@@ -79,27 +79,6 @@
             </div>
         </div>
 
-        <!-- Bootstrap Modal for Editing -->
-        <div class="modal fade" id="editingModal" tabindex="-1" aria-labelledby="editingModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="editingModalLabel">Bearbeiten</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        Möchten Sie wirklich fortfahren?
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal"
-                            id="denyBtn" onclick="editAction('Ablehnen')">Ablehnen</button>
-                        <button type="button" class="btn btn-success" id="confirmBtn" onclick="editAction('Ablehnen')">Freigeben</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Add FullCalendar CSS and JS files -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
@@ -197,9 +176,7 @@
                                     <td>${request.status}</td>
                                     <td>${request.reason}</td>
                                     <td>${request.manager_id}</td>
-                                    <td>
-                                        <button class="btn btn-secondary" onclick="showEditModal(${request.request_id})">Bearbeiten</button>
-                                    </td>
+                                    <td>bearbeitet</td>
                                 </tr>`;
                         }
                     });
@@ -265,54 +242,6 @@
             } else {
                 // Handle login error
                 console.error(data.error);
-            }
-        }
-
-        var editingModal = new bootstrap.Modal(document.getElementById('editingModal'));
-
-        function showEditModal(requestId) {
-            // Set the modal content based on the chosen action
-            const modalBody = document.querySelector('#editingModal .modal-body');
-            modalBody.innerHTML = `Welche Aktion wollen Sie für den Urlaubsantrag <b>${requestId}</b> vornehmen?`;
-
-            // Set the button color and label based on the chosen action
-            const confirmBtn = document.getElementById('confirmBtn');
-            const denyBtn = document.getElementById('denyBtn');
-
-            // Show the modal
-            editingModal.show();
-
-            // Attach additional data to the confirm button for later use
-            confirmBtn.dataset.requestId = requestId;
-            denyBtn.dataset.requestId = requestId;
-        }
-
-        async function editAction(action) {
-            // Retrieve additional data from the confirm button
-            const request_id = document.getElementById('confirmActionBtn').dataset.requestId;
-            var user_id;
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                // Check if this is the cookie we're looking for
-                if (cookie.startsWith('user_id' + '=')) {
-                    user_id = cookie.split('user_id=')[1];
-                }
-            }
-            const response = await fetch(`/manager-response`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ user_id, action, request_id }),
-            });
-
-            if (response.ok) {
-                editingModal.hide();
-                location.reload();
-            } else {
-                // Handle login error
-                console.error(response);
             }
         }
     </script>
