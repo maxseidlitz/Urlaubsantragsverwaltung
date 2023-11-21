@@ -144,7 +144,7 @@
                             }
                             // Parse the date string using moment
                             const startDate = moment(request.start_date, "DD.MM.YYYY");
-                            const endDate = moment(request.end_date, "DD.MM.YYYY");
+                            const endDate = moment(request.end_date, "DD.MM.YYYY").add(1, 'days');
 
                             ev = {
                                 id: request.request_id,
@@ -239,9 +239,10 @@
 
         async function confirmAction() {
             // Retrieve additional data from the button
-            const action = document.getElementById('confirmBtn').dataset.action;
+            const action = document.getElementById('confirmActionBtn').dataset.action;
             const request_id = document.getElementById('confirmActionBtn').dataset.requestId;
             var user_id;
+            console.log(action);
             const cookies = document.cookie.split(';');
             for (let i = 0; i < cookies.length; i++) {
                 const cookie = cookies[i].trim();
