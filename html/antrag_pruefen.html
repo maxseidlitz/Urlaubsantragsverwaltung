@@ -6,13 +6,28 @@
     <!-- Verknüpfung zu Bootstrap-CSS hinzufügen -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css' rel='stylesheet'>
 
 </head>
 
 <body>
+    <style>
+        #calendar {
+            width: 400px;
+            height: 400px;
+        }
+    </style>
     <div class="container">
-        <h1 class="mt-4">Anträge prüfen</h1>
-        <p>Willkommen zur Antragsübersicht Ihrer Mitarbeiter.</p>
+        <div class="row">
+            <div class="col">
+                <h1 class="mt-4">Anträge prüfen</h1>
+                <p>Willkommen zur Antragsübersicht Ihrer Mitarbeiter.</p>
+            </div>
+            <!-- User information section -->
+            <div id="calendar-container" class="col d-flex align-items-center justify-content-end">
+                <div id="calendar"></div>
+            </div>
+        </div>
 
         <!-- Display request list -->
         <div id="requestList" class="mt-4">
@@ -56,13 +71,19 @@
                         Möchten Sie wirklich fortfahren?
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                            id="cancelBtn">Schließen</button>
                         <button type="button" class="btn btn-primary" id="confirmActionBtn">Bestätigen</button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+
+    <!-- Add FullCalendar CSS and JS files -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', async function () {
@@ -88,10 +109,45 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    // format data for FullCalendar
+                    var events = [];
+                    data.forEach(request => {
+                        if (request.request_id && request.status === "genommen" || request.status === "beantragt" || request.status === "freigegeben") {
+                            var color = '';
+                            if (request.status === "genommen") {
+                                color = 'grey';
+                            } else if (request.status === "beantragt") {
+                                color = 'orange';
+                            } else if (request.status === "freigegeben") {
+                                color = 'green';
+                            }
+                            // Parse the date string using moment
+                            const startDate = moment(request.start_date, "DD.MM.YYYY");
+                            const endDate = moment(request.end_date, "DD.MM.YYYY").add(1, 'days');
+
+                            ev = {
+                                id: request.request_id,
+                                allDay: true,
+                                start: startDate.toDate(),
+                                end: endDate.toDate(),
+                                title: request.vacation_type,
+                                backgroundColor: color,
+                                display: 'background',
+                            };
+                            events.push(ev);
+                        }
+                    });
+                    // Initialize FullCalendar
+                    $('#calendar').fullCalendar({
+                        height: 'auto',
+                        editable: false,
+                        events: events, // Your array of events from the server
+                    });
+
                     // Display the data in table -> rows with buttons for accepting and denying request
                     const requestListBody = document.getElementById('requestListBody');
                     data.forEach(request => {
-                        if (request.request_id) {
+                        if (request.request_id && request.status === "beantragt") {
                             requestListBody.innerHTML += `
                                 <tr>
                                     <td>${request.request_id}</td>
@@ -108,10 +164,22 @@
                                         <button class="btn btn-danger" onclick="showConfirmationModal('Ablehnen', ${request.request_id})">Ablehnen</button>
                                     </td>
                                 </tr>`;
+                        } else if (request.request_id) {
+                            requestListBody.innerHTML += `
+                                <tr>
+                                    <td>${request.request_id}</td>
+                                    <td>${request.user_id}</td>
+                                    <td>${request.start_date}</td>
+                                    <td>${request.end_date}</td>
+                                    <td>${request.vacation_days}</td>
+                                    <td>${request.vacation_type}</td>
+                                    <td>${request.status}</td>
+                                    <td>${request.reason}</td>
+                                    <td>${request.manager_id}</td>
+                                    <td>bearbeitet</td>
+                                </tr>`;
                         }
                     });
-
-
                 } else {
                     // Handle login error
                     console.error(data.error);
@@ -147,10 +215,11 @@
         }
 
         async function confirmAction() {
-            // Retrieve additional data from the confirm button
+            // Retrieve additional data from the button
             const action = document.getElementById('confirmActionBtn').dataset.action;
             const request_id = document.getElementById('confirmActionBtn').dataset.requestId;
             var user_id;
+            console.log(action);
             const cookies = document.cookie.split(';');
             for (let i = 0; i < cookies.length; i++) {
                 const cookie = cookies[i].trim();
@@ -167,20 +236,13 @@
                 body: JSON.stringify({ user_id, action, request_id }),
             });
 
-            const data = await response.json();
-
             if (response.ok) {
-
-                // Redirect to the specified URL
-                window.location.href = '/main';
+                confirmationModal.hide();
+                location.reload();
             } else {
                 // Handle login error
                 console.error(data.error);
             }
-
-            // Close the modal
-            confirmationModal.hide();
-            updateRows();
         }
     </script>
 </body>
