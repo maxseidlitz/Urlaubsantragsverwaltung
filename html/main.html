@@ -185,7 +185,7 @@
                     // Display the data in table -> rows with buttons for accepting and denying request
                     const requestListBody = document.getElementById('requestListBody');
                     data.forEach(request => {
-                        if (request.request_id) {
+                        if (request.request_id && request.status === "beantragt" || request.status === "freigegeben") {
                             requestListBody.innerHTML += `
                                     <tr>
                                         <td>${request.request_id}</td>
@@ -201,6 +201,19 @@
                                             <button class="btn btn-success" onclick="showConfirmationModal('Stornieren', ${request.request_id})">Stornieren</button>
                                         </td>
                                     </tr>`;
+                        } else if (request.request_id) {
+                            requestListBody.innerHTML += `
+                                    <tr>
+                                        <td>${request.request_id}</td>
+                                        <td>${request.user_id}</td>
+                                        <td>${request.start_date}</td>
+                                        <td>${request.end_date}</td>
+                                        <td>${request.vacation_days}</td>
+                                        <td>${request.vacation_type}</td>
+                                        <td>${request.status}</td>
+                                        <td>${request.reason}</td>
+                                        <td>${request.manager_id}</td>
+                                        </tr>`;
                         }
                     });
 
