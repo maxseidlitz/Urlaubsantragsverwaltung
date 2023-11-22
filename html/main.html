@@ -10,25 +10,19 @@
 
 <body>
     <style>
-        /* Style for the gear icon */
-        #adminIcon {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            cursor: pointer;
-        }
-
-        /* Style for user information */
-        #userInfo {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-        }
     </style>
     <div class="container">
-
-        <h1 class="mt-4">Urlaubsantragsverwaltung</h1>
-        <p>Willkommen zur Urlaubsantragsverwaltung. Wählen Sie eine Option:</p>
+        <div class="row">
+            <div class="col">
+                <h1 class="mt-4">Urlaubsantragsverwaltung</h1>
+                <p>Willkommen zur Urlaubsantragsverwaltung. Wählen Sie eine Option:</p>
+            </div>
+            <!-- User information section -->
+            <div id="userInfo" class="col d-flex align-items-center justify-content-end">
+                <p id="userName"></p>
+                <p id="daysLeft"></p>
+            </div>
+        </div>
 
         <!-- Verwenden Sie Bootstrap-Buttons -->
         <div class="btn-group">
@@ -216,13 +210,10 @@
                 },
                 body: JSON.stringify({ user_id, action, request_id }),
             });
-
-            const data = await response.json();
-
+            
             if (response.ok) {
-
-                // Redirect to the specified URL
-                window.location.href = '/main';
+                confirmationModal.hide();
+                location.reload();
             } else {
                 // Handle login error
                 console.error(data.error);

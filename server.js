@@ -16,6 +16,12 @@ const verifyManager = require("./middleware/verifyManager");
 const verifyHR = require("./middleware/verifyHR");
 
 app.use(bodyParser.urlencoded({ extended: false }), bodyParser.json());
+app.use((req, res, next) => {
+  if (req.path === "/") {
+    return res.redirect("/login");
+  }
+  next();
+});
 
 function generateSalt() {
   const saltRounds = 10; // The number of salt rounds
@@ -113,7 +119,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.post("/process_form", (req, res) => {
+app.post("/process-form", (req, res) => {
   const {
     startdatum,
     enddatum,
@@ -122,6 +128,7 @@ app.post("/process_form", (req, res) => {
     reason,
     urlaubstage,
   } = req.body;
+  const vacDays = Number(urlaubstage);
 
   const status = "beantragt";
 
@@ -131,7 +138,7 @@ app.post("/process_form", (req, res) => {
       personalnummer,
       startdatum,
       enddatum,
-      urlaubstage,
+      vacDays,
       status,
       urlaubsart,
       reason || "-",
@@ -142,7 +149,7 @@ app.post("/process_form", (req, res) => {
         console.error("Error inserting data:", error);
         res.status(500).send("Error inserting data into the database");
       } else {
-        res.status(200).send("Data inserted successfully");
+        res.status(200).writeHead(301, { Location: "/main" }).end();
       }
     }
   );
@@ -271,7 +278,7 @@ app.post("/get-all-requests/", [verifyToken, verifyHR], (req, res) => {
 });
 
 // for admin
-app.post("/get-all-user/all", [verifyToken, verifyAdmin], (req, res) => {
+app.post("/get-all-users/", [verifyToken, verifyAdmin], (req, res) => {
   // Get users
   try {
     pool.query(`SELECT * FROM public.users`, (error, results) => {
@@ -295,14 +302,13 @@ app.post("/manager-response", [verifyToken, verifyManager], (req, res) => {
   const request_id = req.body.request_id;
   if (!(user_id && action && request_id)) {
     res.status(400).send("All data is required");
-  }
-  var status = "empty";
-  if (action === "Freigeben") {
-    status = "freigegeben";
-  } else if (action === "Ablehnen") {
-    status = "abgelehnt";
-  }
-  if (action) {
+  } else {
+    var status = "empty";
+    if (action === "Freigeben") {
+      status = "freigegeben";
+    } else if (action === "Ablehnen") {
+      status = "abgelehnt";
+    }
     try {
       pool.query(
         "UPDATE public.vacation_request SET status = $1 WHERE manager_id = $2 AND request_id=$3;",
@@ -319,8 +325,6 @@ app.post("/manager-response", [verifyToken, verifyManager], (req, res) => {
     } catch (error) {
       console.error("Error getting request information:", error);
     }
-  } else if (!action) {
-    console.log("Updating request was not possible");
   }
 });
 
@@ -335,7 +339,7 @@ app.post("/user-response", [verifyToken], (req, res) => {
   }
   var status = "empty";
   if (action === "Stornieren") {
-    status = "stornieren";
+    status = "storniert";
   }
   try {
     pool.query(
