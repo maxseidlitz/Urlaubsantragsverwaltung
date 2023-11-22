@@ -77,6 +77,17 @@
 
     <!-- JavaScript-Funktion, um die Anzahl der Urlaubstage automatisch zu berechnen TODO: Wochenenden + Feiertage ausrechnen-->
     <script>
+        window.onload = function () {
+                document.getElementById('startdatum').value = '';
+                document.getElementById('enddatum').value = '';
+                document.getElementById('reason').value = '';
+                document.getElementById('urlaubstage').value = '';
+                document.getElementById('bildungsurlaub').checked = false;
+                document.getElementById('umzug').checked = false;
+                document.getElementById('normalerUrlaub').checked = false;
+                document.getElementById('ueberstundenausgleich').checked = false;
+                document.getElementById('sonderurlaub').checked = false;
+            }
         document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('startdatum').addEventListener('change', updateUrlaubstage);
             document.getElementById('enddatum').addEventListener('change', updateUrlaubstage);
@@ -160,25 +171,24 @@
                 }
             }
 
-            // const response = await fetch(`/get-left-vacation-days/${user_id}`, {
-            //     method: 'POST',
-            //     headers: {
-            //         'Content-Type': 'application/json',
-            //     },
-            // });
+            const response = await fetch(`/get-left-vacation-days/${user_id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
 
-            // const data = await response.json();
+            const data = await response.json();
 
-            // if (response.ok) {
-            //     // Extract the remaining days left for vacation
-            //     const { remDays } = data;
-            //     const daysLeft = remDays - urlaubstage;
+            if (response.ok) {
+                // Extract the remaining days left for vacation
+                const remDays = data.days;
 
-            //     if (daysLeft <= 0) {
-            //         alert(`Es sind nicht mehr ausreichend Urlaubstage vorhanden. (${daysLeft})`);
-            //         return false;
-            //     }
-            // }
+                if (daysLeft <= 0) {
+                    alert(`Es sind nicht mehr ausreichend Urlaubstage vorhanden. (${daysLeft})`);
+                    return false;
+                }
+            }
 
             // Add more validation logic as needed
             return true;

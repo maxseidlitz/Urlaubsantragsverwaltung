@@ -15,28 +15,24 @@
         <div class="row">
             <div class="col">
                 <h1 class="mt-4">Urlaubsantragsverwaltung</h1>
-                <p>Willkommen zur Urlaubsantragsverwaltung. Wählen Sie eine Option:</p>
+                <a>Willkommen zur Urlaubsantragsverwaltung, <a id="userName"></a>. Sie haben noch <a id="daysLeft"></a>
+                    Urlaubstage übrig.</p>
+                    <!-- Verwenden Sie Bootstrap-Buttons -->
+                    <div class="btn-group">
+                        <a href="antrag_stellen" class="btn btn-primary">Antrag stellen</a>
+                        <!-- Nur wenn Manager -> button sichtbar -->
+                        <a id="antragPruefenBtn" href="antrag_pruefen" class="btn btn-success"
+                            style="display: none;">Antrag
+                            prüfen</a>
+                        <a id="HROverviewBtn" href="hr_overview" class="btn btn-success"
+                            style="display: none;">Übersicht alle
+                            Anträge</a>
+                    </div>
             </div>
             <!-- User information section -->
-            <div id="userInfo" class="col d-flex align-items-center justify-content-end">
-                <p id="userName"></p>
-                <p id="daysLeft"></p>
+            <div id="calendar-container" class="col d-flex align-items-center justify-content-end">
+                <div id="calendar"></div>
             </div>
-        </div>
-
-        <!-- Verwenden Sie Bootstrap-Buttons -->
-        <div class="btn-group">
-            <a href="antrag_stellen" class="btn btn-primary">Antrag stellen</a>
-            <!-- Nur wenn Manager -> button sichtbar -->
-            <a id="antragPruefenBtn" href="antrag_pruefen" class="btn btn-success" style="display: none;">Antrag
-                prüfen</a>
-            <a id="HROverviewBtn" href="hr_overview" class="btn btn-success" style="display: none;">Übersicht alle Anträge</a>
-        </div>
-
-        <!-- User information section -->
-        <div id="userInfo" class="text-end">
-            <p id="userName"></p>
-            <p id="daysLeft"></p>
         </div>
 
         <!-- Display request list -->
@@ -82,13 +78,18 @@
                 </div>
             </div>
         </div>
-
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-        <!-- Latest compiled and minified JavaScript -->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
-            crossorigin="anonymous"></script>
     </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+    <!-- Add FullCalendar CSS and JS files -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', async function () {
             try {
@@ -109,6 +110,25 @@
                     }
                 }
 
+                const res = await fetch(`/get-left-vacation-days/${user_id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                const days = await res.json();
+
+                if (res.ok) {
+                    const remDays = days.days;
+                    document.getElementById('daysLeft').innerText = remDays;
+                } else {
+                    document.getElementById('daysLeft').innerText = 'n.a.';
+                }
+
+                // Display user information
+                document.getElementById('userName').innerText = username;
+
                 // Check if the user is a manager/hr and show the buttons accordingly
                 if (role === 'Manager') {
                     document.getElementById('antragPruefenBtn').style.display = 'block';
@@ -127,6 +147,41 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    // format data for FullCalendar
+                    var events = [];
+                    data.forEach(request => {
+                        if (request.request_id && request.status === "genommen" || request.status === "beantragt" || request.status === "freigegeben") {
+                            var color = '';
+                            if (request.status === "genommen") {
+                                color = 'grey';
+                            } else if (request.status === "beantragt") {
+                                color = 'orange';
+                            } else if (request.status === "freigegeben") {
+                                color = 'green';
+                            }
+                            // Parse the date string using moment
+                            const startDate = moment(request.start_date, "DD.MM.YYYY");
+                            const endDate = moment(request.end_date, "DD.MM.YYYY").add(1, 'days');
+
+                            ev = {
+                                id: request.request_id,
+                                allDay: true,
+                                start: startDate.toDate(),
+                                end: endDate.toDate(),
+                                title: request.vacation_type,
+                                backgroundColor: color,
+                                display: 'background',
+                            };
+                            events.push(ev);
+                        }
+                    });
+                    // Initialize FullCalendar
+                    $('#calendar').fullCalendar({
+                        height: 'auto',
+                        editable: false,
+                        events: events, // Your array of events from the server
+                    });
+
                     // Display the data in table -> rows with buttons for accepting and denying request
                     const requestListBody = document.getElementById('requestListBody');
                     data.forEach(request => {
@@ -148,12 +203,6 @@
                                     </tr>`;
                         }
                     });
-
-                    const days = data[data.length - 1].days;
-
-                    // Display user role in the user information section
-                    document.getElementById('userName').innerText = 'Nutzername: ' + username;
-                    document.getElementById('daysLeft').innerText = 'Verbleibende Urlaubstage: ' + days;
 
                 } else {
                     // Handle login error
@@ -210,7 +259,7 @@
                 },
                 body: JSON.stringify({ user_id, action, request_id }),
             });
-            
+
             if (response.ok) {
                 confirmationModal.hide();
                 location.reload();

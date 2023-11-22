@@ -225,14 +225,7 @@ app.post(
               ).format("L");
               row.start_date = start;
               row.end_date = end;
-              if (row.status === "freigegeben" || row.status === "genommen") {
-                days = row.vacation_days + days;
-              }
             });
-            daysObj = {
-              days: 30 - days,
-            };
-            results.rows.push(daysObj);
             res.status(200).json(results.rows);
           }
         }
@@ -242,6 +235,46 @@ app.post(
     }
   }
 );
+
+// Get the days, that the employee has left
+app.post("/get-left-vacation-days/:user_id", [verifyToken], (req, res) => {
+  // Get vacation requests
+  const user_id = req.params.user_id;
+  try {
+    pool.query(
+      `SELECT request_id,start_date,end_date,vacation_days,status FROM public.vacation_request WHERE user_id = ${user_id} AND status='freigegeben' OR status='beantragt' OR status='genommen' ORDER BY request_id`,
+      (error, results) => {
+        if (error) {
+          console.error("Error getting data:", error);
+          res.status(500).send("Error getting data from the database");
+        } else {
+          var days = 0;
+          results.rows.forEach((row) => {
+            const start = moment(
+              new Date(row.start_date),
+              "DD.MM.YYYY",
+              true
+            ).format("L");
+            const end = moment(
+              new Date(row.end_date),
+              "DD.MM.YYYY",
+              true
+            ).format("L");
+            row.start_date = start;
+            row.end_date = end;
+            days = row.vacation_days + days;
+          });
+          daysObj = {
+            days: 30 - days,
+          };
+          res.status(200).json(daysObj);
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Error getting request information:", error);
+  }
+});
 
 // for HR
 app.post("/get-all-requests/", [verifyToken, verifyHR], (req, res) => {
