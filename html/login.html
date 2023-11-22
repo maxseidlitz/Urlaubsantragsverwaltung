@@ -65,7 +65,7 @@
                     document.cookie = `token=${token}`
 
                     // Redirect to the specified URL
-                    if (role === "Manager" || role === "User") {
+                    if (role === "Manager" || role === "User" || role === "HR") {
                         window.location.href = '/main';
                     } else if (role === "Admin") {
                         window.location.href = '/admin';

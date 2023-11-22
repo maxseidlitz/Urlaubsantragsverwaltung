@@ -13,6 +13,7 @@ moment.locale("de");
 const verifyToken = require("./middleware/verifyToken");
 const verifyAdmin = require("./middleware/verifyAdmin");
 const verifyManager = require("./middleware/verifyManager");
+const verifyHR = require("./middleware/verifyHR");
 
 app.use(bodyParser.urlencoded({ extended: false }), bodyParser.json());
 
@@ -189,18 +190,63 @@ app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
   }
 });
 
-app.post("/get-employee-requests/:user_id", [verifyToken, verifyManager], (req, res) => {
+app.post(
+  "/get-employee-requests/:user_id",
+  [verifyToken, verifyManager],
+  (req, res) => {
+    // Get vacation requests
+    const user_id = req.params.user_id;
+    try {
+      pool.query(
+        `SELECT * FROM public.vacation_request WHERE manager_id = ${user_id} ORDER BY request_id`,
+        (error, results) => {
+          if (error) {
+            console.error("Error getting data:", error);
+            res.status(500).send("Error getting data from the database");
+          } else {
+            var days = 0;
+            results.rows.forEach((row) => {
+              const start = moment(
+                new Date(row.start_date),
+                "DD.MM.YYYY",
+                true
+              ).format("L");
+              const end = moment(
+                new Date(row.end_date),
+                "DD.MM.YYYY",
+                true
+              ).format("L");
+              row.start_date = start;
+              row.end_date = end;
+              if (row.status === "freigegeben" || row.status === "genommen") {
+                days = row.vacation_days + days;
+              }
+            });
+            daysObj = {
+              days: 30 - days,
+            };
+            results.rows.push(daysObj);
+            res.status(200).json(results.rows);
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error getting request information:", error);
+    }
+  }
+);
+
+// for HR
+app.post("/get-all-requests/", [verifyToken, verifyHR], (req, res) => {
   // Get vacation requests
-  const user_id = req.params.user_id;
   try {
     pool.query(
-      `SELECT * FROM public.vacation_request WHERE manager_id = ${user_id} ORDER BY request_id`,
+      `SELECT * FROM public.vacation_request WHERE status='freigegeben' OR status='abgelehnt' ORDER BY request_id`,
       (error, results) => {
         if (error) {
           console.error("Error getting data:", error);
           res.status(500).send("Error getting data from the database");
         } else {
-          var days = 0;
           results.rows.forEach((row) => {
             const start = moment(
               new Date(row.start_date),
@@ -214,14 +260,7 @@ app.post("/get-employee-requests/:user_id", [verifyToken, verifyManager], (req, 
             ).format("L");
             row.start_date = start;
             row.end_date = end;
-            if (row.status === "freigegeben" || row.status === "genommen") {
-              days = row.vacation_days + days;
-            }
           });
-          daysObj = {
-            days: 30 - days,
-          };
-          results.rows.push(daysObj);
           res.status(200).json(results.rows);
         }
       }
@@ -317,22 +356,6 @@ app.post("/user-response", [verifyToken], (req, res) => {
 });
 
 // app GET
-
-app.get("/main", verifyToken, (req, res) => {
-  // Serve the protected HTML file
-  res.sendFile(__dirname + "/html/main.html");
-});
-
-app.get("/antrag_stellen", verifyToken, (req, res) => {
-  // Serve the protected HTML file
-  res.sendFile(__dirname + "/html/antrag_stellen.html");
-});
-
-app.get("/antrag_pruefen", [verifyToken, verifyManager], (req, res) => {
-  // Serve the protected HTML file
-  res.sendFile(__dirname + "/html/antrag_pruefen.html");
-});
-
 app.get("/login", (req, res) => {
   // Serve the protected HTML file
   res.sendFile(__dirname + "/html/login.html");
@@ -345,6 +368,28 @@ app.get("/logout", (req, res) => {
     }
     res.redirect("/login"); // Redirect to the login page
   });
+});
+
+app.get("/main", verifyToken, (req, res) => {
+  // Serve the protected HTML file
+  res.sendFile(__dirname + "/html/main.html");
+});
+
+app.get("/antrag_stellen", verifyToken, (req, res) => {
+  // Serve the protected HTML file
+  res.sendFile(__dirname + "/html/antrag_stellen.html");
+});
+
+// Manager Panel route
+app.get("/antrag_pruefen", [verifyToken, verifyManager], (req, res) => {
+  // Serve the protected HTML file
+  res.sendFile(__dirname + "/html/antrag_pruefen.html");
+});
+
+// HR Panel route
+app.get("/hr_overview", [verifyToken, verifyHR], (req, res) => {
+  // Serve the protected HTML file
+  res.sendFile(__dirname + "/html/hr_overview.html");
 });
 
 // Admin Panel route

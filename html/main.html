@@ -36,12 +36,7 @@
             <!-- Nur wenn Manager -> button sichtbar -->
             <a id="antragPruefenBtn" href="antrag_pruefen" class="btn btn-success" style="display: none;">Antrag
                 prüfen</a>
-        </div>
-
-        <div id="adminIcon">
-            <a href="/admin">
-                <span>&#9881;</span>
-            </a>
+            <a id="HROverviewBtn" href="hr_overview" class="btn btn-success" style="display: none;">Übersicht alle Anträge</a>
         </div>
 
         <!-- User information section -->
@@ -120,9 +115,11 @@
                     }
                 }
 
-                // Check if the user is a manager and show the button accordingly
+                // Check if the user is a manager/hr and show the buttons accordingly
                 if (role === 'Manager') {
                     document.getElementById('antragPruefenBtn').style.display = 'block';
+                } else if (role === 'HR') {
+                    document.getElementById('HROverviewBtn').style.display = 'block';
                 }
 
                 // Get employees vacation_requests
