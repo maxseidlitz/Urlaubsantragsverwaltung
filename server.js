@@ -61,7 +61,7 @@ async function authenticateUser(usernameOrId) {
 // app POST
 
 app.post("/register", (req, res) => {
-  const { username, email, password, role, manager } = req.body;
+  const { username, email, password, role, manager, department } = req.body;
   // Generate a random salt
   const salt = generateSalt();
   // Combine salt and password
@@ -76,8 +76,8 @@ app.post("/register", (req, res) => {
     } else {
       // Store the username, email, and hashed password in the database
       const insertQuery =
-        "INSERT INTO users (username, email, password_hash, password_salt, role, manager_id) VALUES ($1, $2, $3, $4, $5, $6)";
-      const values = [username, email, hash, salt, role, manager];
+        "INSERT INTO users (username, email, password_hash, password_salt, role, manager_id, department) VALUES ($1, $2, $3, $4, $5, $6, $7)";
+      const values = [username, email, hash, salt, role, manager, department];
 
       pool
         .query(insertQuery, values)
@@ -230,9 +230,11 @@ app.post(
   (req, res) => {
     // Get vacation requests
     const user_id = req.params.user_id;
+    const department = req.body.department;
     try {
       pool.query(
-        `SELECT * FROM public.vacation_request WHERE manager_id = ${user_id} ORDER BY request_id DESC`,
+        "SELECT * FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.manager_id=$1 AND u.department=$2 ORDER BY request_id DESC",
+        [user_id, department],
         (error, results) => {
           if (error) {
             console.error("Error getting data:", error);
@@ -302,6 +304,31 @@ app.post("/get-left-vacation-days/:user_id", [verifyToken], (req, res) => {
     console.error("Error getting request information:", error);
   }
 });
+
+// Get the departments, that the manager manages
+app.post(
+  "/get-departments/:user_id",
+  [verifyToken, verifyManager],
+  (req, res) => {
+    const manager_id = req.params.user_id;
+    const department = req.body.department;
+    try {
+      pool.query(
+        `SELECT DISTINCT department FROM public.users WHERE manager_id=${manager_id}`,
+        (error, results) => {
+          if (error) {
+            console.error("Error getting data:", error);
+            res.status(500).send("Error getting data from the database");
+          } else {
+            res.status(200).json(results.rows);
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error getting request information:", error);
+    }
+  }
+);
 
 // Get the ics file, that the employee has selected
 app.post("/get-ics/:user_id", [verifyToken], (req, res) => {

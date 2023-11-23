@@ -36,6 +36,7 @@
                             <th>Status</th>
                             <th>Grund</th>
                             <th>Manager ID</th>
+                            <th>Abteilung</th>
                             <th>Aktion</th>
                         </tr>
                     </thead>
@@ -86,6 +87,7 @@
                                         <td>${request.status}</td>
                                         <td>${request.reason}</td>
                                         <td>${request.manager_id}</td>
+                                        <td>${request.department}</td>
                                         <td>
                                             <button class="${buttonClass}" onclick="check(${!request.hr_checked}, ${request.request_id})">${buttonText}</button>
                                         </td>
