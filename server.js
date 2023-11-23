@@ -10,6 +10,7 @@ const jwt = require("jsonwebtoken");
 const app = express();
 const port = 3000;
 moment.locale("de");
+const generateICS = require("./middleware/generateICS");
 const verifyToken = require("./middleware/verifyToken");
 const verifyAdmin = require("./middleware/verifyAdmin");
 const verifyManager = require("./middleware/verifyManager");
@@ -187,6 +188,7 @@ app.post("/hr-check", [verifyToken, verifyHR], (req, res) => {
   );
 });
 
+// for the employee:
 app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
   // Get vacation requests
   const user_id = req.params.user_id;
@@ -198,7 +200,6 @@ app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
           console.error("Error getting data:", error);
           res.status(500).send("Error getting data from the database");
         } else {
-          var days = 0;
           results.rows.forEach((row) => {
             const start = moment(
               new Date(row.start_date),
@@ -212,14 +213,7 @@ app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
             ).format("L");
             row.start_date = start;
             row.end_date = end;
-            if (row.status === "freigegeben" || row.status === "genommen") {
-              days = row.vacation_days + days;
-            }
           });
-          daysObj = {
-            days: 30 - days,
-          };
-          results.rows.push(daysObj);
           res.status(200).json(results.rows);
         }
       }
@@ -229,6 +223,7 @@ app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
   }
 });
 
+// for the manager:
 app.post(
   "/get-employee-requests/:user_id",
   [verifyToken, verifyManager],
@@ -308,12 +303,35 @@ app.post("/get-left-vacation-days/:user_id", [verifyToken], (req, res) => {
   }
 });
 
+// Get the ics file, that the employee has selected
+app.post("/get-ics/:user_id", [verifyToken], (req, res) => {
+  // Get vacation requests
+  const user_id = req.params.user_id;
+  const request_id = req.body.request_id;
+  try {
+    pool.query(
+      `SELECT * FROM public.vacation_request WHERE user_id=${user_id} AND request_id=${request_id} ORDER BY request_id`,
+      (error, results) => {
+        if (error) {
+          console.error("Error getting data:", error);
+          res.status(500).send("Error getting data from the database");
+        } else {
+          const IcsObj = generateICS(results.rows[0]);
+          res.status(200).json(IcsObj);
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Error getting ics files:", error);
+  }
+});
+
 // for HR
 app.post("/get-all-requests/", [verifyToken, verifyHR], (req, res) => {
   // Get vacation requests
   try {
     pool.query(
-      `SELECT * FROM public.vacation_request WHERE status='freigegeben' OR status='abgelehnt' ORDER BY request_id DESC`,
+      `SELECT * FROM public.vacation_request WHERE status='freigegeben' OR status='abgelehnt' OR status='genommen' OR status='storniert' ORDER BY request_id DESC`,
       (error, results) => {
         if (error) {
           console.error("Error getting data:", error);

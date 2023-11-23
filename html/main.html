@@ -199,6 +199,13 @@
                                         <td>${request.manager_id}</td>
                                         <td>
                                             <button class="btn btn-success" onclick="showConfirmationModal('Stornieren', ${request.request_id})">Stornieren</button>
+                                            <button type="button" class="btn btn-outline-secondary" onclick="getIcsFile(${request.request_id}, ${request.user_id})">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"></path>
+                                                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path>
+                                                </svg>
+                                                <span class="visually-hidden">Button</span>
+                                            </button>
                                         </td>
                                     </tr>`;
                         } else if (request.request_id) {
@@ -213,7 +220,16 @@
                                         <td>${request.status}</td>
                                         <td>${request.reason}</td>
                                         <td>${request.manager_id}</td>
-                                        </tr>`;
+                                        <td>
+                                            <button type="button" class="btn btn-outline-secondary" onclick="getIcsFile(${request.request_id}, ${request.user_id})">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
+                                                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"></path>
+                                                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"></path>
+                                                </svg>
+                                                <span class="visually-hidden">Button</span>
+                                            </button>
+                                        </td>
+                                    </tr>`;
                         }
                     });
 
@@ -232,6 +248,34 @@
 
         // Set up event listener for the confirm action button
         document.getElementById('confirmActionBtn').addEventListener('click', confirmAction);
+
+        async function getIcsFile(request_id, user_id) {
+            const response = await fetch(`/get-ics/${user_id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ request_id }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Create a Blob containing the iCalendar data
+                const blob = new Blob([data], { type: 'text/calendar;charset=utf-8' });
+
+                // Create a download link and trigger a click event to download the file
+                const a = document.createElement('a');
+                a.href = window.URL.createObjectURL(blob);
+                a.download = 'urlaub.ics';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                // Handle login error
+                console.error(data.error);
+            }
+        }
 
         function showConfirmationModal(action, requestId) {
             // Set the modal content based on the chosen action
