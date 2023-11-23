@@ -10,6 +10,12 @@
 </head>
 
 <body>
+    <style>
+        tr.crossed-out td {
+            color: grey !important;
+            text-decoration: line-through !important;
+        }
+    </style>
     <div class="container">
         <h1 class="mt-4">Urlaubsübersicht</h1>
         <p>Willkommen zur Antragsübersicht aller Mitarbeiter*innen.</p>
@@ -30,61 +36,90 @@
                             <th>Status</th>
                             <th>Grund</th>
                             <th>Manager ID</th>
+                            <th>Aktion</th>
                         </tr>
                     </thead>
                     <tbody id="requestListBody"></tbody>
                 </table>
             </div>
         </div>
+    </div>
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <!-- Latest compiled and minified JavaScript -->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
             integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
             crossorigin="anonymous"></script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', async function () {
-            try {
-                // Get employees vacation_requests
-                const response = await fetch(`/get-all-requests/`, {
+        <script>
+            document.addEventListener('DOMContentLoaded', async function () {
+                try {
+                    // Get employees vacation_requests
+                    const response = await fetch(`/get-all-requests/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        // Display the data in table -> rows with buttons for accepting and denying request
+                        const requestListBody = document.getElementById('requestListBody');
+                        data.forEach(request => {
+                            if (request.request_id) {
+                                // Check hr_checked to determine the class for styling
+                                const rowClass = request.hr_checked ? 'crossed-out' : '';
+
+                                // Check hr_checked to determine the button text and class
+                                const buttonText = request.hr_checked ? 'Check' : 'Uncheck';
+                                const buttonClass = request.hr_checked ? 'btn btn-secondary' : 'btn btn-primary';
+
+                                requestListBody.innerHTML += `
+                                    <tr class="${rowClass}">
+                                        <td>${request.request_id}</td>
+                                        <td>${request.user_id}</td>
+                                        <td>${request.start_date}</td>
+                                        <td>${request.end_date}</td>
+                                        <td>${request.vacation_days}</td>
+                                        <td>${request.vacation_type}</td>
+                                        <td>${request.status}</td>
+                                        <td>${request.reason}</td>
+                                        <td>${request.manager_id}</td>
+                                        <td>
+                                            <button class="${buttonClass}" onclick="check(${!request.hr_checked}, ${request.request_id})">${buttonText}</button>
+                                        </td>
+                                    </tr>`;
+                            }
+                        });
+
+
+                    } else {
+                        // Handle login error
+                        console.error(data.error);
+                    }
+                } catch (error) {
+                    console.error('Error getting user information:', error);
+                }
+            });
+
+            async function check(bool, request_id) {
+                const response = await fetch(`/hr-check`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
+                    body: JSON.stringify({ bool, request_id }),
                 });
 
-                const data = await response.json();
-
                 if (response.ok) {
-                    // Display the data in table -> rows with buttons for accepting and denying request
-                    const requestListBody = document.getElementById('requestListBody');
-                    data.forEach(request => {
-                        if (request.request_id) {
-                            requestListBody.innerHTML += `
-                                <tr>
-                                    <td>${request.request_id}</td>
-                                    <td>${request.user_id}</td>
-                                    <td>${request.start_date}</td>
-                                    <td>${request.end_date}</td>
-                                    <td>${request.vacation_days}</td>
-                                    <td>${request.vacation_type}</td>
-                                    <td>${request.status}</td>
-                                    <td>${request.reason}</td>
-                                    <td>${request.manager_id}</td>
-                                </tr>`;
-                        }
-                    });
-
-
+                    location.reload();
                 } else {
                     // Handle login error
-                    console.error(data.error);
+                    console.error("Error updating check.");
                 }
-            } catch (error) {
-                console.error('Error getting user information:', error);
             }
-        });
-    </script>
+        </script>
 </body>
 
 </html>

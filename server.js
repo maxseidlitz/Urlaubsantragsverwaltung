@@ -155,12 +155,31 @@ app.post("/process-form", (req, res) => {
   );
 });
 
+app.post("/hr-check", [verifyToken, verifyHR], (req, res) => {
+  const {
+    bool,
+    request_id
+  } = req.body;
+
+  pool.query(
+    `UPDATE public.vacation_request SET hr_checked=${bool} WHERE request_id=${request_id};`,
+    (error, results) => {
+      if (error) {
+        console.error("Error inserting data:", error);
+        res.status(500).send("Error inserting data into the database");
+      } else {
+        res.status(200).send("Request was successfully updated.");
+      }
+    }
+  );
+});
+
 app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
   // Get vacation requests
   const user_id = req.params.user_id;
   try {
     pool.query(
-      `SELECT * FROM public.vacation_request WHERE user_id = ${user_id} ORDER BY request_id`,
+      `SELECT * FROM public.vacation_request WHERE user_id = ${user_id} ORDER BY request_id DESC`,
       (error, results) => {
         if (error) {
           console.error("Error getting data:", error);
@@ -205,7 +224,7 @@ app.post(
     const user_id = req.params.user_id;
     try {
       pool.query(
-        `SELECT * FROM public.vacation_request WHERE manager_id = ${user_id} ORDER BY request_id`,
+        `SELECT * FROM public.vacation_request WHERE manager_id = ${user_id} ORDER BY request_id DESC`,
         (error, results) => {
           if (error) {
             console.error("Error getting data:", error);
@@ -281,7 +300,7 @@ app.post("/get-all-requests/", [verifyToken, verifyHR], (req, res) => {
   // Get vacation requests
   try {
     pool.query(
-      `SELECT * FROM public.vacation_request WHERE status='freigegeben' OR status='abgelehnt' ORDER BY request_id`,
+      `SELECT * FROM public.vacation_request WHERE status='freigegeben' OR status='abgelehnt' ORDER BY request_id DESC`,
       (error, results) => {
         if (error) {
           console.error("Error getting data:", error);
