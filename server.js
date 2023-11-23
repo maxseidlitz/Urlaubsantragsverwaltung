@@ -28,12 +28,25 @@ function generateSalt() {
   return crypto.randomBytes(saltRounds).toString("hex"); // Generate a 32-character hexadecimal salt
 }
 
-async function authenticateUser(username) {
+async function authenticateUser(usernameOrId) {
+  let query;
+  let values;
+
+  if (isNaN(usernameOrId)) {
+    // If the input is not a number, treat it as a username
+    query = "SELECT * FROM users WHERE username = $1";
+    values = [usernameOrId];
+  } else {
+    // If the input is a number, treat it as a user ID
+    query = "SELECT * FROM users WHERE user_id = $1";
+    values = [parseInt(usernameOrId)];
+  }
+
   return pool
-    .query("SELECT * FROM users WHERE username = $1", [username])
+    .query(query, values)
     .then((result) => {
       if (result.rows.length === 1) {
-        return (user = result.rows[0]);
+        return result.rows[0];
       } else {
         return null;
       }
@@ -82,13 +95,13 @@ app.post("/register", (req, res) => {
 
 app.post("/login", async (req, res) => {
   try {
-    const username = req.body.username;
+    const usernameOrId = req.body.usernameOrId;
     const password = req.body.password;
-    if (!(username && password)) {
+    if (!(usernameOrId && password)) {
       res.status(400).send("All input is required");
     }
     // Validate if user exist in our database
-    const user = await authenticateUser(username);
+    const user = await authenticateUser(usernameOrId);
     const storedHash = user.password_hash;
     const saltedPassword = user.password_salt + password;
 
@@ -261,7 +274,7 @@ app.post("/get-left-vacation-days/:user_id", [verifyToken], (req, res) => {
   const user_id = req.params.user_id;
   try {
     pool.query(
-      `SELECT request_id,start_date,end_date,vacation_days,status FROM public.vacation_request WHERE user_id = ${user_id} AND status='freigegeben' OR status='beantragt' OR status='genommen' ORDER BY request_id`,
+      `SELECT request_id,start_date,end_date,vacation_days,status FROM public.vacation_request WHERE user_id=${user_id} AND (status='freigegeben' OR status='beantragt' OR status='genommen') ORDER BY request_id`,
       (error, results) => {
         if (error) {
           console.error("Error getting data:", error);

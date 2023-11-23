@@ -15,8 +15,8 @@
             <form id="login-form" action="/login" method="POST">
                 <div class="form-group">
                     <!-- Auch E-Mail sollte möglich sein -->
-                    <label for="username">Name:</label>
-                    <input type="text" class="form-control" id="username" name="username" required>
+                    <label for="usernameOrId">Name oder Personalnummer:</label>
+                    <input type="text" class="form-control" id="usernameOrId" name="usernameOrId" required>
                 </div>
 
                 <div class="form-group">
@@ -34,7 +34,7 @@
         document.getElementById('login-form').addEventListener('submit', async function (event) {
             event.preventDefault();
 
-            const username = document.getElementById('username').value;
+            const usernameOrId = document.getElementById('usernameOrId').value;
             const password = document.getElementById('password').value;
 
             try {
@@ -43,7 +43,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ username, password }),
+                    body: JSON.stringify({ usernameOrId, password }),
                 });
 
                 const data = await response.json();
