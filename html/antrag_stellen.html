@@ -78,16 +78,16 @@
     <!-- JavaScript-Funktion, um die Anzahl der Urlaubstage automatisch zu berechnen TODO: Wochenenden + Feiertage ausrechnen-->
     <script>
         window.onload = function () {
-                document.getElementById('startdatum').value = '';
-                document.getElementById('enddatum').value = '';
-                document.getElementById('reason').value = '';
-                document.getElementById('urlaubstage').value = '';
-                document.getElementById('bildungsurlaub').checked = false;
-                document.getElementById('umzug').checked = false;
-                document.getElementById('normalerUrlaub').checked = false;
-                document.getElementById('ueberstundenausgleich').checked = false;
-                document.getElementById('sonderurlaub').checked = false;
-            }
+            document.getElementById('startdatum').value = '';
+            document.getElementById('enddatum').value = '';
+            document.getElementById('reason').value = '';
+            document.getElementById('urlaubstage').value = '';
+            document.getElementById('bildungsurlaub').checked = false;
+            document.getElementById('umzug').checked = false;
+            document.getElementById('normalerUrlaub').checked = false;
+            document.getElementById('ueberstundenausgleich').checked = false;
+            document.getElementById('sonderurlaub').checked = false;
+        }
         document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('startdatum').addEventListener('change', updateUrlaubstage);
             document.getElementById('enddatum').addEventListener('change', updateUrlaubstage);

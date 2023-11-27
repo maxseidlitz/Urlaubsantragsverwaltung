@@ -29,7 +29,7 @@
                             Anträge</a>
                     </div>
             </div>
-            <!-- User information section -->
+            <!-- Request information section -->
             <div id="calendar-container" class="col d-flex align-items-center justify-content-end">
                 <div id="calendar"></div>
             </div>
@@ -300,21 +300,13 @@
             // Retrieve additional data from the confirm button
             const action = document.getElementById('confirmActionBtn').dataset.action;
             const request_id = document.getElementById('confirmActionBtn').dataset.requestId;
-            var user_id;
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                // Check if this is the cookie we're looking for
-                if (cookie.startsWith('user_id' + '=')) {
-                    user_id = cookie.split('user_id=')[1];
-                }
-            }
+
             const response = await fetch(`/user-response`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ user_id, action, request_id }),
+                body: JSON.stringify({ action, request_id }),
             });
 
             if (response.ok) {
@@ -322,11 +314,8 @@
                 location.reload();
             } else {
                 // Handle login error
-                console.error(data.error);
+                console.error(error);
             }
-
-            // Close the modal
-            confirmationModal.hide();
         }
     </script>
 </body>

@@ -19,7 +19,7 @@
                 <select class="form-control" id="departmentDropdown" name="department">
                 </select>
             </div>
-            <!-- User information section -->
+            <!-- Request information section -->
             <div id="calendar-container" class="col d-flex align-items-center justify-content-end">
                 <div id="calendar"></div>
             </div>
@@ -86,6 +86,11 @@
     <script>
         document.addEventListener('DOMContentLoaded', async function () {
             try {
+                $('#calendar').fullCalendar({
+                    height: 'auto',
+                    editable: false,
+                });
+
                 var user_id;
                 const cookies = document.cookie.split(';');
                 for (let i = 0; i < cookies.length; i++) {
@@ -120,10 +125,6 @@
                 console.error('Error getting user information:', error);
             }
         });
-
-        function deleteEvents() {
-            $('#calendar').fullCalendar('removeEvents');
-        }
 
         async function getData() {
             const requestListBody = document.getElementById('requestListBody');
@@ -181,12 +182,9 @@
                         events.push(ev);
                     }
                 });
+
                 // Initialize FullCalendar
-                $('#calendar').fullCalendar({
-                    height: 'auto',
-                    editable: false,
-                    events: events, // Your array of events from the server
-                });
+                initializeCalendar(events);
 
                 // Display the data in table -> rows with buttons for accepting and denying request
                 const requestListBody = document.getElementById('requestListBody');
@@ -230,6 +228,18 @@
                 // Handle login error
                 console.error(data.error);
             }
+        }
+
+        function initializeCalendar(events) {
+            $('#calendar').fullCalendar({
+                height: 'auto',
+                editable: false,
+                events: events, // Your array of events from the server
+            });
+        }
+
+        function deleteEvents() {
+            $('#calendar').fullCalendar('destroy');
         }
 
         // Enable Bootstrap modals

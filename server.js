@@ -58,6 +58,23 @@ async function authenticateUser(usernameOrId) {
     });
 }
 
+async function changeRequestStatus(request_id, status) {
+  try {
+    pool.query(
+      `UPDATE public.vacation_request SET status='${status}' WHERE request_id=${request_id}`,
+      (error, results) => {
+        if (error) {
+          console.error("Error updating data:", error);
+        } else {
+          console.log("Update successfull.");
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Error updating request status:", error);
+  }
+}
+
 // app POST
 
 app.post("/register", (req, res) => {
@@ -170,10 +187,7 @@ app.post("/process-form", (req, res) => {
 });
 
 app.post("/hr-check", [verifyToken, verifyHR], (req, res) => {
-  const {
-    bool,
-    request_id
-  } = req.body;
+  const { bool, request_id } = req.body;
 
   pool.query(
     `UPDATE public.vacation_request SET hr_checked=${bool} WHERE request_id=${request_id};`,
@@ -201,6 +215,19 @@ app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
           res.status(500).send("Error getting data from the database");
         } else {
           results.rows.forEach((row) => {
+            if (
+              row.status === "freigegeben" &&
+              new Date(row.start_date) <= new Date()
+            ) {
+              row.status = "genommen";
+              changeRequestStatus(row.request_id, "genommen");
+            } else if (
+              row.status === "beantragt" &&
+              new Date(row.start_date) <= new Date()
+            ) {
+              row.status = "verfallen";
+              changeRequestStatus(row.request_id, "verfallen");
+            }
             const start = moment(
               new Date(row.start_date),
               "DD.MM.YYYY",
@@ -242,6 +269,19 @@ app.post(
           } else {
             var days = 0;
             results.rows.forEach((row) => {
+              if (
+                row.status === "freigegeben" &&
+                new Date(row.start_date) <= new Date()
+              ) {
+                row.status = "genommen";
+                changeRequestStatus(row.request_id, "genommen");
+              } else if (
+                row.status === "beantragt" &&
+                new Date(row.start_date) <= new Date()
+              ) {
+                row.status = "verfallen";
+                changeRequestStatus(row.request_id, "verfallen");
+              }
               const start = moment(
                 new Date(row.start_date),
                 "DD.MM.YYYY",
@@ -365,6 +405,19 @@ app.post("/get-all-requests/", [verifyToken, verifyHR], (req, res) => {
           res.status(500).send("Error getting data from the database");
         } else {
           results.rows.forEach((row) => {
+            if (
+              row.status === "freigegeben" &&
+              new Date(row.start_date) <= new Date()
+            ) {
+              row.status = "genommen";
+              changeRequestStatus(row.request_id, "genommen");
+            } else if (
+              row.status === "beantragt" &&
+              new Date(row.start_date) <= new Date()
+            ) {
+              row.status = "verfallen";
+              changeRequestStatus(row.request_id, "verfallen");
+            }
             const start = moment(
               new Date(row.start_date),
               "DD.MM.YYYY",
@@ -441,32 +494,17 @@ app.post("/manager-response", [verifyToken, verifyManager], (req, res) => {
 // Load response from vacation request into db from user
 app.post("/user-response", [verifyToken], (req, res) => {
   // Get vacation requests
-  const user_id = req.body.user_id;
   const action = req.body.action;
   const request_id = req.body.request_id;
-  if (!(user_id && action && request_id)) {
+  if (!(action && request_id)) {
     res.status(400).send("All data is required");
   }
+
   var status = "empty";
   if (action === "Stornieren") {
     status = "storniert";
   }
-  try {
-    pool.query(
-      "UPDATE public.vacation_request SET status = $1 WHERE user_id = $2 AND request_id=$3;",
-      [status, user_id, request_id],
-      (error, results) => {
-        if (error) {
-          console.error("Error getting data:", error);
-          res.status(500).send("Error getting data from the database");
-        } else {
-          res.status(200).send("Request was successfully updated");
-        }
-      }
-    );
-  } catch (error) {
-    console.error("Error getting request information:", error);
-  }
+  changeRequestStatus(request_id, status);
 });
 
 // app GET
