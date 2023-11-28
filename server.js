@@ -78,7 +78,7 @@ async function changeRequestStatus(request_id, status) {
 // app POST
 
 app.post("/register", (req, res) => {
-  const { username, email, password, role, manager, department } = req.body;
+  const { username, email, password, role, manager, department, vacation_claim } = req.body;
   // Generate a random salt
   const salt = generateSalt();
   // Combine salt and password
@@ -93,8 +93,17 @@ app.post("/register", (req, res) => {
     } else {
       // Store the username, email, and hashed password in the database
       const insertQuery =
-        "INSERT INTO users (username, email, password_hash, password_salt, role, manager_id, department) VALUES ($1, $2, $3, $4, $5, $6, $7)";
-      const values = [username, email, hash, salt, role, manager, department];
+        "INSERT INTO users (username, email, password_hash, password_salt, role, manager_id, department, vacation_claim) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
+      const values = [
+        username,
+        email,
+        hash,
+        salt,
+        role,
+        manager,
+        department,
+        vacation_claim,
+      ];
 
       pool
         .query(insertQuery, values)
@@ -225,8 +234,8 @@ app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
               row.status === "beantragt" &&
               new Date(row.start_date) <= new Date()
             ) {
-              row.status = "verfallen";
-              changeRequestStatus(row.request_id, "verfallen");
+              row.status = "abgelehnt";
+              changeRequestStatus(row.request_id, "abgelehnt");
             }
             const start = moment(
               new Date(row.start_date),
@@ -279,8 +288,8 @@ app.post(
                 row.status === "beantragt" &&
                 new Date(row.start_date) <= new Date()
               ) {
-                row.status = "verfallen";
-                changeRequestStatus(row.request_id, "verfallen");
+                row.status = "abgelehnt";
+                changeRequestStatus(row.request_id, "abgelehnt");
               }
               const start = moment(
                 new Date(row.start_date),
@@ -310,6 +319,18 @@ app.post("/get-left-vacation-days/:user_id", [verifyToken], (req, res) => {
   // Get vacation requests
   const user_id = req.params.user_id;
   try {
+    var vacation_claim = 0;
+    pool.query(
+      `SELECT vacation_claim FROM public.users WHERE user_id=${user_id}`,
+      (error, results) => {
+        if (error) {
+          console.error("Error getting data:", error);
+          res.status(500).send("Error getting user data from the database");
+        } else {
+          vacation_claim = results.rows[0].vacation_claim;
+        }
+      }
+    );
     pool.query(
       `SELECT request_id,start_date,end_date,vacation_days,status FROM public.vacation_request WHERE user_id=${user_id} AND (status='freigegeben' OR status='beantragt' OR status='genommen') ORDER BY request_id`,
       (error, results) => {
@@ -415,8 +436,8 @@ app.post("/get-all-requests/", [verifyToken, verifyHR], (req, res) => {
               row.status === "beantragt" &&
               new Date(row.start_date) <= new Date()
             ) {
-              row.status = "verfallen";
-              changeRequestStatus(row.request_id, "verfallen");
+              row.status = "abgelehnt";
+              changeRequestStatus(row.request_id, "abgelehnt");
             }
             const start = moment(
               new Date(row.start_date),
