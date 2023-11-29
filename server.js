@@ -78,7 +78,22 @@ async function changeRequestStatus(request_id, status) {
 // app POST
 
 app.post("/register", (req, res) => {
-  const { username, email, password, role, manager, department, vacation_claim } = req.body;
+  const {
+    username,
+    email,
+    password,
+    role,
+    manager,
+    department,
+    vacation_claim,
+  } = req.body;
+  var vac_claim = 0;
+  if (!vacation_claim) {
+    vac_claim = 30;
+  } else {
+    vac_claim = vacation_claim;
+  }
+
   // Generate a random salt
   const salt = generateSalt();
   // Combine salt and password
@@ -102,7 +117,7 @@ app.post("/register", (req, res) => {
         role,
         manager,
         department,
-        vacation_claim,
+        vac_claim,
       ];
 
       pool
@@ -211,6 +226,24 @@ app.post("/hr-check", [verifyToken, verifyHR], (req, res) => {
   );
 });
 
+app.post("/departments", [verifyToken, verifyAdmin], (req, res) => {
+  try {
+    pool.query(
+      `SELECT DISTINCT department FROM public.users ORDER BY department ASC`,
+      (error, results) => {
+        if (error) {
+          console.error("Error getting data:", error);
+          res.status(500).send("Error getting data from the database");
+        } else {
+          res.status(200).send(results.rows);
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Error getting request information:", error);
+  }
+});
+
 // for the employee:
 app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
   // Get vacation requests
@@ -237,6 +270,42 @@ app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
               row.status = "abgelehnt";
               changeRequestStatus(row.request_id, "abgelehnt");
             }
+            const start = moment(
+              new Date(row.start_date),
+              "DD.MM.YYYY",
+              true
+            ).format("L");
+            const end = moment(
+              new Date(row.end_date),
+              "DD.MM.YYYY",
+              true
+            ).format("L");
+            row.start_date = start;
+            row.end_date = end;
+          });
+          res.status(200).json(results.rows);
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Error getting request information:", error);
+  }
+});
+
+// Get vacation requests from same department
+app.post("/get-dep-vacation-requests/:user_id", [verifyToken], (req, res) => {
+  // Get vacation requests
+  const user_id = req.params.user_id;
+  const department = req.body.department;
+  try {
+    pool.query(
+      `SELECT vr.request_id,vr.start_date,vr.end_date,vr.status FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.department='${department}' AND (vr.status='freigegeben' OR vr.status='beantragt') AND NOT (vr.user_id=${user_id}) ORDER BY vr.request_id DESC;`,
+      (error, results) => {
+        if (error) {
+          console.error("Error getting data:", error);
+          res.status(500).send("Error getting data from the database");
+        } else {
+          results.rows.forEach((row) => {
             const start = moment(
               new Date(row.start_date),
               "DD.MM.YYYY",
@@ -372,7 +441,6 @@ app.post(
   [verifyToken, verifyManager],
   (req, res) => {
     const manager_id = req.params.user_id;
-    const department = req.body.department;
     try {
       pool.query(
         `SELECT DISTINCT department FROM public.users WHERE manager_id=${manager_id}`,
@@ -569,6 +637,12 @@ app.get("/hr_overview", [verifyToken, verifyHR], (req, res) => {
 app.get("/admin", [verifyToken, verifyAdmin], (req, res) => {
   // Serve the HTML file for the admin panel
   res.sendFile(__dirname + "/html/admin.html");
+});
+
+// Admin registration Panel route
+app.get("/register-user", [verifyToken, verifyAdmin], (req, res) => {
+  // Serve the HTML file for the admin panel
+  res.sendFile(__dirname + "/html/register.html");
 });
 
 // This should be the last route else any after it won't work

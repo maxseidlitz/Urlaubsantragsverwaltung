@@ -13,6 +13,7 @@
         a {
             display: contents;
         }
+
         .row {
             padding-bottom: 30px;
         }
@@ -30,18 +31,20 @@
                     <div class="btn-group">
                         <a href="antrag_stellen" class="btn btn-primary">Antrag stellen</a>
                         <!-- Nur wenn Manager -> button sichtbar -->
-                        <a id="antragPruefenBtn" href="antrag_pruefen" class="btn btn-success" style="display: none;">Antrag
+                        <a id="antragPruefenBtn" href="antrag_pruefen" class="btn btn-success"
+                            style="display: none;">Antrag
                             prüfen</a>
-                        <a id="HROverviewBtn" href="hr_overview" class="btn btn-success" style="display: none;">Übersicht
+                        <a id="HROverviewBtn" href="hr_overview" class="btn btn-success"
+                            style="display: none;">Übersicht
                             alle
                             Anträge</a>
                     </div>
                 </div>
                 <div class="row">
                     <!-- Content inside the left column aligned horizontally -->
-                        <p>Nutzername: <a id="userName2"></a></p>
-                        <p>Abteilung: <a id="UserDepartment"></a></p>
-                        <p>Verbleibende Urlaubstage: <a id="daysLeft"></a></p>
+                    <p>Nutzername: <a id="userName2"></a></p>
+                    <p>Abteilung: <a id="UserDepartment"></a></p>
+                    <p>Verbleibende Urlaubstage: <a id="daysLeft"></a></p>
                 </div>
             </div>
             <!-- Request information section -->
@@ -146,9 +149,9 @@
                 }
 
                 // Display user information
-                document.getElementById('userName').innerText = username;
-                document.getElementById('userName2').innerText = username;
-                document.getElementById('UserDepartment').innerText = department;
+                document.getElementById('userName').innerText = username != !username ? username : 'n.a.';
+                document.getElementById('userName2').innerText = username != !username ? username : 'n.a.';
+                document.getElementById('UserDepartment').innerText = department != !department ? department : 'n.a.';
 
                 // Check if the user is a manager/hr and show the buttons accordingly
                 if (role === 'Manager') {
@@ -196,6 +199,46 @@
                             events.push(ev);
                         }
                     });
+
+                    // Get colleagues vacation_requests
+                    const otherResponse = await fetch(`/get-dep-vacation-requests/${user_id}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ department }),
+                    });
+
+                    const otherData = await otherResponse.json();
+
+                    if (otherResponse.ok) {
+                        // format data for FullCalendar
+                        otherData.forEach(request => {
+                            if (request.request_id) {
+                                var color = '';
+                                if (request.status === "beantragt") {
+                                    color = '#b4c6d0';
+                                } else if (request.status === "freigegeben") {
+                                    color = '#5a6f66';
+                                }
+                                // Parse the date string using moment
+                                const startDate = moment(request.start_date, "DD.MM.YYYY");
+                                const endDate = moment(request.end_date, "DD.MM.YYYY").add(1, 'days');
+                                const title = request.status === "freigegeben" ? 'Freigegeben' : 'Beantragt';
+                                ev2 = {
+                                    id: request.request_id,
+                                    allDay: true,
+                                    start: startDate.toDate(),
+                                    end: endDate.toDate(),
+                                    title: title,
+                                    backgroundColor: color,
+                                    display: 'background',
+                                };
+                                events.push(ev2);
+                            }
+                        });
+                    }
+
                     // Initialize FullCalendar
                     $('#calendar').fullCalendar({
                         height: 'auto',
@@ -206,7 +249,7 @@
                     // Display the data in table -> rows with buttons for accepting and denying request
                     const requestListBody = document.getElementById('requestListBody');
                     data.forEach(request => {
-                        if (request.request_id && request.status === "beantragt" || request.status === "freigegeben") {
+                        if (request.request_id && request.user_id && (request.status === "beantragt" || request.status === "freigegeben")) {
                             requestListBody.innerHTML += `
                                     <tr>
                                         <td>${request.request_id}</td>

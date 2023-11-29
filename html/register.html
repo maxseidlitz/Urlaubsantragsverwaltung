@@ -40,11 +40,7 @@
 
             <div class="form-group">
                 <label for="department">Abteilung:</label>
-                <select class="form-control" id="department" name="department" required>
-                    <option value="D1">D1</option>
-                    <option value="D2">D2</option>
-                    <option value="D3">D3</option>
-                    <option value="D4">D4</option>
+                <select class="form-control" id="departmentDropdown" name="departmentDropdown" required>
                 </select>
             </div>
 
@@ -55,12 +51,46 @@
             
             <div class="form-group">
                 <label for="vacation_claim">Urlaubsanspruch:</label>
-                <input type="text" class="form-control" id="vacation_claim" name="vacation_claim" required>
+                <input type="text" class="form-control" id="vacation_claim" name="vacation_claim">
             </div>
 
             <button type="submit" class="btn btn-primary">Register</button>
         </form>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            try {
+                // Get employees vacation_requests
+                const response = await fetch(`/departments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Display the data in table -> rows with buttons for accepting and denying request
+                    const requestListBody = document.getElementById('departmentDropdown');
+                    data.forEach(request => {
+                        if (request.department) {
+                            requestListBody.innerHTML += `
+                                <option value="${request.department}">${request.department}</option>
+                            `;
+                        }
+                    });
+
+
+                } else {
+                    // Handle login error
+                    console.error(data.error);
+                }
+            } catch (error) {
+                console.error('Error getting department information:', error);
+            }
+        });
+    </script>
 </body>
 
 </html>
