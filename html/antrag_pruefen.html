@@ -16,8 +16,10 @@
             <div class="col">
                 <h1 class="mt-4">Anträge prüfen</h1>
                 <p>Willkommen zur Antragsübersicht Ihrer Mitarbeiter.</p>
+                <select class="form-control" id="departmentDropdown" name="department">
+                </select>
             </div>
-            <!-- User information section -->
+            <!-- Request information section -->
             <div id="calendar-container" class="col d-flex align-items-center justify-content-end">
                 <div id="calendar"></div>
             </div>
@@ -39,6 +41,7 @@
                             <th>Status</th>
                             <th>Grund</th>
                             <th>Manager ID</th>
+                            <th>Abteilung</th>
                             <th>Aktion</th>
                         </tr>
                     </thead>
@@ -83,8 +86,12 @@
     <script>
         document.addEventListener('DOMContentLoaded', async function () {
             try {
+                $('#calendar').fullCalendar({
+                    height: 'auto',
+                    editable: false,
+                });
+
                 var user_id;
-                var role;
                 const cookies = document.cookie.split(';');
                 for (let i = 0; i < cookies.length; i++) {
                     const cookie = cookies[i].trim();
@@ -94,7 +101,7 @@
                     }
                 }
                 // Get employees vacation_requests
-                const response = await fetch(`/get-employee-requests/${user_id}`, {
+                const response = await fetch(`/get-departments/${user_id}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -104,76 +111,11 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // format data for FullCalendar
-                    var events = [];
-                    data.forEach(request => {
-                        if (request.request_id && request.status === "genommen" || request.status === "beantragt" || request.status === "freigegeben") {
-                            var color = '';
-                            if (request.status === "genommen") {
-                                color = 'grey';
-                            } else if (request.status === "beantragt") {
-                                color = 'orange';
-                            } else if (request.status === "freigegeben") {
-                                color = 'green';
-                            }
-                            // Parse the date string using moment
-                            const startDate = moment(request.start_date, "DD.MM.YYYY");
-                            const endDate = moment(request.end_date, "DD.MM.YYYY").add(1, 'days');
-
-                            ev = {
-                                id: request.request_id,
-                                allDay: true,
-                                start: startDate.toDate(),
-                                end: endDate.toDate(),
-                                title: request.vacation_type,
-                                backgroundColor: color,
-                                display: 'background',
-                            };
-                            events.push(ev);
-                        }
-                    });
-                    // Initialize FullCalendar
-                    $('#calendar').fullCalendar({
-                        height: 'auto',
-                        editable: false,
-                        events: events, // Your array of events from the server
-                    });
-
-                    // Display the data in table -> rows with buttons for accepting and denying request
-                    const requestListBody = document.getElementById('requestListBody');
-                    data.forEach(request => {
-                        if (request.request_id && request.status === "beantragt") {
-                            requestListBody.innerHTML += `
-                                <tr>
-                                    <td>${request.request_id}</td>
-                                    <td>${request.user_id}</td>
-                                    <td>${request.start_date}</td>
-                                    <td>${request.end_date}</td>
-                                    <td>${request.vacation_days}</td>
-                                    <td>${request.vacation_type}</td>
-                                    <td>${request.status}</td>
-                                    <td>${request.reason}</td>
-                                    <td>${request.manager_id}</td>
-                                    <td>
-                                        <button class="btn btn-success" onclick="showConfirmationModal('Freigeben', ${request.request_id})">Freigeben</button>
-                                        <button class="btn btn-danger" onclick="showConfirmationModal('Ablehnen', ${request.request_id})">Ablehnen</button>
-                                    </td>
-                                </tr>`;
-                        } else if (request.request_id) {
-                            requestListBody.innerHTML += `
-                                <tr>
-                                    <td>${request.request_id}</td>
-                                    <td>${request.user_id}</td>
-                                    <td>${request.start_date}</td>
-                                    <td>${request.end_date}</td>
-                                    <td>${request.vacation_days}</td>
-                                    <td>${request.vacation_type}</td>
-                                    <td>${request.status}</td>
-                                    <td>${request.reason}</td>
-                                    <td>${request.manager_id}</td>
-                                    <td>bearbeitet</td>
-                                </tr>`;
-                        }
+                    const requestListBody = document.getElementById('departmentDropdown');
+                    data.forEach(result => {
+                        requestListBody.innerHTML += `
+                            <option value="${result.department}" onclick="getData()">${result.department}</option>
+                        `;
                     });
                 } else {
                     // Handle login error
@@ -183,6 +125,122 @@
                 console.error('Error getting user information:', error);
             }
         });
+
+        async function getData() {
+            const requestListBody = document.getElementById('requestListBody');
+            requestListBody.innerHTML = '';
+
+            deleteEvents();
+
+            const department = document.getElementById('departmentDropdown').value;
+            var user_id;
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Check if this is the cookie we're looking for
+                if (cookie.startsWith('user_id' + '=')) {
+                    user_id = cookie.split('user_id=')[1];
+                }
+            }
+            // Get employees vacation_requests
+            const response = await fetch(`/get-employee-requests/${user_id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ department }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data) {
+                // format data for FullCalendar
+                var events = [];
+                data.forEach(request => {
+                    if (request.request_id && request.status === "genommen" || request.status === "beantragt" || request.status === "freigegeben") {
+                        var color = '';
+                        if (request.status === "genommen") {
+                            color = 'grey';
+                        } else if (request.status === "beantragt") {
+                            color = 'orange';
+                        } else if (request.status === "freigegeben") {
+                            color = 'green';
+                        }
+                        // Parse the date string using moment
+                        const startDate = moment(request.start_date, "DD.MM.YYYY");
+                        const endDate = moment(request.end_date, "DD.MM.YYYY").add(1, 'days');
+
+                        ev = {
+                            id: request.request_id,
+                            allDay: true,
+                            start: startDate.toDate(),
+                            end: endDate.toDate(),
+                            title: request.vacation_type,
+                            backgroundColor: color,
+                            display: 'background',
+                        };
+                        events.push(ev);
+                    }
+                });
+
+                // Initialize FullCalendar
+                initializeCalendar(events);
+
+                // Display the data in table -> rows with buttons for accepting and denying request
+                const requestListBody = document.getElementById('requestListBody');
+                data.forEach(request => {
+                    if (request.request_id && request.status === "beantragt") {
+                        requestListBody.innerHTML += `
+                                <tr>
+                                    <td>${request.request_id}</td>
+                                    <td>${request.user_id}</td>
+                                    <td>${request.start_date}</td>
+                                    <td>${request.end_date}</td>
+                                    <td>${request.vacation_days}</td>
+                                    <td>${request.vacation_type}</td>
+                                    <td>${request.status}</td>
+                                    <td>${request.reason}</td>
+                                    <td>${request.manager_id}</td>
+                                    <td>${request.department}</td>
+                                    <td>
+                                        <button class="btn btn-success" onclick="showConfirmationModal('Freigeben', ${request.request_id})">Freigeben</button>
+                                        <button class="btn btn-danger" onclick="showConfirmationModal('Ablehnen', ${request.request_id})">Ablehnen</button>
+                                    </td>
+                                </tr>`;
+                    } else if (request.request_id) {
+                        requestListBody.innerHTML += `
+                                <tr>
+                                    <td>${request.request_id}</td>
+                                    <td>${request.user_id}</td>
+                                    <td>${request.start_date}</td>
+                                    <td>${request.end_date}</td>
+                                    <td>${request.vacation_days}</td>
+                                    <td>${request.vacation_type}</td>
+                                    <td>${request.status}</td>
+                                    <td>${request.reason}</td>
+                                    <td>${request.manager_id}</td>
+                                    <td>${request.department}</td>
+                                    <td>bearbeitet</td>
+                                </tr>`;
+                    }
+                });
+            } else {
+                // Handle login error
+                console.error(data.error);
+            }
+        }
+
+        function initializeCalendar(events) {
+            $('#calendar').fullCalendar({
+                height: 'auto',
+                editable: false,
+                events: events, // Your array of events from the server
+            });
+        }
+
+        function deleteEvents() {
+            $('#calendar').fullCalendar('destroy');
+        }
 
         // Enable Bootstrap modals
         var confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));

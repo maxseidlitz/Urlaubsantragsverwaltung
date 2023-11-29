@@ -58,10 +58,42 @@ async function authenticateUser(usernameOrId) {
     });
 }
 
+async function changeRequestStatus(request_id, status) {
+  try {
+    pool.query(
+      `UPDATE public.vacation_request SET status='${status}' WHERE request_id=${request_id}`,
+      (error, results) => {
+        if (error) {
+          console.error("Error updating data:", error);
+        } else {
+          console.log("Update successfull.");
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Error updating request status:", error);
+  }
+}
+
 // app POST
 
 app.post("/register", (req, res) => {
-  const { username, email, password, role, manager } = req.body;
+  const {
+    username,
+    email,
+    password,
+    role,
+    manager,
+    department,
+    vacation_claim,
+  } = req.body;
+  var vac_claim = 0;
+  if (!vacation_claim) {
+    vac_claim = 30;
+  } else {
+    vac_claim = vacation_claim;
+  }
+
   // Generate a random salt
   const salt = generateSalt();
   // Combine salt and password
@@ -76,8 +108,17 @@ app.post("/register", (req, res) => {
     } else {
       // Store the username, email, and hashed password in the database
       const insertQuery =
-        "INSERT INTO users (username, email, password_hash, password_salt, role, manager_id) VALUES ($1, $2, $3, $4, $5, $6)";
-      const values = [username, email, hash, salt, role, manager];
+        "INSERT INTO users (username, email, password_hash, password_salt, role, manager_id, department, vacation_claim) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
+      const values = [
+        username,
+        email,
+        hash,
+        salt,
+        role,
+        manager,
+        department,
+        vac_claim,
+      ];
 
       pool
         .query(insertQuery, values)
@@ -170,10 +211,7 @@ app.post("/process-form", (req, res) => {
 });
 
 app.post("/hr-check", [verifyToken, verifyHR], (req, res) => {
-  const {
-    bool,
-    request_id
-  } = req.body;
+  const { bool, request_id } = req.body;
 
   pool.query(
     `UPDATE public.vacation_request SET hr_checked=${bool} WHERE request_id=${request_id};`,
@@ -188,6 +226,24 @@ app.post("/hr-check", [verifyToken, verifyHR], (req, res) => {
   );
 });
 
+app.post("/departments", [verifyToken, verifyAdmin], (req, res) => {
+  try {
+    pool.query(
+      `SELECT DISTINCT department FROM public.users ORDER BY department ASC`,
+      (error, results) => {
+        if (error) {
+          console.error("Error getting data:", error);
+          res.status(500).send("Error getting data from the database");
+        } else {
+          res.status(200).send(results.rows);
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Error getting request information:", error);
+  }
+});
+
 // for the employee:
 app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
   // Get vacation requests
@@ -195,6 +251,55 @@ app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
   try {
     pool.query(
       `SELECT * FROM public.vacation_request WHERE user_id = ${user_id} ORDER BY request_id DESC`,
+      (error, results) => {
+        if (error) {
+          console.error("Error getting data:", error);
+          res.status(500).send("Error getting data from the database");
+        } else {
+          results.rows.forEach((row) => {
+            if (
+              row.status === "freigegeben" &&
+              new Date(row.start_date) <= new Date()
+            ) {
+              row.status = "genommen";
+              changeRequestStatus(row.request_id, "genommen");
+            } else if (
+              row.status === "beantragt" &&
+              new Date(row.start_date) <= new Date()
+            ) {
+              row.status = "abgelehnt";
+              changeRequestStatus(row.request_id, "abgelehnt");
+            }
+            const start = moment(
+              new Date(row.start_date),
+              "DD.MM.YYYY",
+              true
+            ).format("L");
+            const end = moment(
+              new Date(row.end_date),
+              "DD.MM.YYYY",
+              true
+            ).format("L");
+            row.start_date = start;
+            row.end_date = end;
+          });
+          res.status(200).json(results.rows);
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Error getting request information:", error);
+  }
+});
+
+// Get vacation requests from same department
+app.post("/get-dep-vacation-requests/:user_id", [verifyToken], (req, res) => {
+  // Get vacation requests
+  const user_id = req.params.user_id;
+  const department = req.body.department;
+  try {
+    pool.query(
+      `SELECT vr.request_id,vr.start_date,vr.end_date,vr.status FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.department='${department}' AND (vr.status='freigegeben' OR vr.status='beantragt') AND NOT (vr.user_id=${user_id}) ORDER BY vr.request_id DESC;`,
       (error, results) => {
         if (error) {
           console.error("Error getting data:", error);
@@ -230,9 +335,11 @@ app.post(
   (req, res) => {
     // Get vacation requests
     const user_id = req.params.user_id;
+    const department = req.body.department;
     try {
       pool.query(
-        `SELECT * FROM public.vacation_request WHERE manager_id = ${user_id} ORDER BY request_id DESC`,
+        "SELECT * FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.manager_id=$1 AND u.department=$2 ORDER BY request_id DESC",
+        [user_id, department],
         (error, results) => {
           if (error) {
             console.error("Error getting data:", error);
@@ -240,6 +347,19 @@ app.post(
           } else {
             var days = 0;
             results.rows.forEach((row) => {
+              if (
+                row.status === "freigegeben" &&
+                new Date(row.start_date) <= new Date()
+              ) {
+                row.status = "genommen";
+                changeRequestStatus(row.request_id, "genommen");
+              } else if (
+                row.status === "beantragt" &&
+                new Date(row.start_date) <= new Date()
+              ) {
+                row.status = "abgelehnt";
+                changeRequestStatus(row.request_id, "abgelehnt");
+              }
               const start = moment(
                 new Date(row.start_date),
                 "DD.MM.YYYY",
@@ -268,6 +388,18 @@ app.post("/get-left-vacation-days/:user_id", [verifyToken], (req, res) => {
   // Get vacation requests
   const user_id = req.params.user_id;
   try {
+    var vacation_claim = 0;
+    pool.query(
+      `SELECT vacation_claim FROM public.users WHERE user_id=${user_id}`,
+      (error, results) => {
+        if (error) {
+          console.error("Error getting data:", error);
+          res.status(500).send("Error getting user data from the database");
+        } else {
+          vacation_claim = results.rows[0].vacation_claim;
+        }
+      }
+    );
     pool.query(
       `SELECT request_id,start_date,end_date,vacation_days,status FROM public.vacation_request WHERE user_id=${user_id} AND (status='freigegeben' OR status='beantragt' OR status='genommen') ORDER BY request_id`,
       (error, results) => {
@@ -302,6 +434,30 @@ app.post("/get-left-vacation-days/:user_id", [verifyToken], (req, res) => {
     console.error("Error getting request information:", error);
   }
 });
+
+// Get the departments, that the manager manages
+app.post(
+  "/get-departments/:user_id",
+  [verifyToken, verifyManager],
+  (req, res) => {
+    const manager_id = req.params.user_id;
+    try {
+      pool.query(
+        `SELECT DISTINCT department FROM public.users WHERE manager_id=${manager_id}`,
+        (error, results) => {
+          if (error) {
+            console.error("Error getting data:", error);
+            res.status(500).send("Error getting data from the database");
+          } else {
+            res.status(200).json(results.rows);
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error getting request information:", error);
+    }
+  }
+);
 
 // Get the ics file, that the employee has selected
 app.post("/get-ics/:user_id", [verifyToken], (req, res) => {
@@ -338,6 +494,19 @@ app.post("/get-all-requests/", [verifyToken, verifyHR], (req, res) => {
           res.status(500).send("Error getting data from the database");
         } else {
           results.rows.forEach((row) => {
+            if (
+              row.status === "freigegeben" &&
+              new Date(row.start_date) <= new Date()
+            ) {
+              row.status = "genommen";
+              changeRequestStatus(row.request_id, "genommen");
+            } else if (
+              row.status === "beantragt" &&
+              new Date(row.start_date) <= new Date()
+            ) {
+              row.status = "abgelehnt";
+              changeRequestStatus(row.request_id, "abgelehnt");
+            }
             const start = moment(
               new Date(row.start_date),
               "DD.MM.YYYY",
@@ -414,32 +583,17 @@ app.post("/manager-response", [verifyToken, verifyManager], (req, res) => {
 // Load response from vacation request into db from user
 app.post("/user-response", [verifyToken], (req, res) => {
   // Get vacation requests
-  const user_id = req.body.user_id;
   const action = req.body.action;
   const request_id = req.body.request_id;
-  if (!(user_id && action && request_id)) {
+  if (!(action && request_id)) {
     res.status(400).send("All data is required");
   }
+
   var status = "empty";
   if (action === "Stornieren") {
     status = "storniert";
   }
-  try {
-    pool.query(
-      "UPDATE public.vacation_request SET status = $1 WHERE user_id = $2 AND request_id=$3;",
-      [status, user_id, request_id],
-      (error, results) => {
-        if (error) {
-          console.error("Error getting data:", error);
-          res.status(500).send("Error getting data from the database");
-        } else {
-          res.status(200).send("Request was successfully updated");
-        }
-      }
-    );
-  } catch (error) {
-    console.error("Error getting request information:", error);
-  }
+  changeRequestStatus(request_id, status);
 });
 
 // app GET
@@ -483,6 +637,12 @@ app.get("/hr_overview", [verifyToken, verifyHR], (req, res) => {
 app.get("/admin", [verifyToken, verifyAdmin], (req, res) => {
   // Serve the HTML file for the admin panel
   res.sendFile(__dirname + "/html/admin.html");
+});
+
+// Admin registration Panel route
+app.get("/register-user", [verifyToken, verifyAdmin], (req, res) => {
+  // Serve the HTML file for the admin panel
+  res.sendFile(__dirname + "/html/register.html");
 });
 
 // This should be the last route else any after it won't work

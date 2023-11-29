@@ -10,13 +10,23 @@
 
 <body>
     <style>
+        a {
+            display: contents;
+        }
+
+        .row {
+            padding-bottom: 30px;
+        }
     </style>
     <div class="container">
         <div class="row">
-            <div class="col">
-                <h1 class="mt-4">Urlaubsantragsverwaltung</h1>
-                <a>Willkommen zur Urlaubsantragsverwaltung, <a id="userName"></a>. Sie haben noch <a id="daysLeft"></a>
-                    Urlaubstage übrig.</p>
+            <div class="col-md-6">
+                <!-- Content in the left column -->
+                <div class="row">
+                    <h1 class="mt-4">Urlaubsantragsverwaltung</h1>
+                    <p>Willkommen zur Urlaubsantragsverwaltung, <a id="userName"></a>.</p>
+                </div>
+                <div class="row">
                     <!-- Verwenden Sie Bootstrap-Buttons -->
                     <div class="btn-group">
                         <a href="antrag_stellen" class="btn btn-primary">Antrag stellen</a>
@@ -25,15 +35,24 @@
                             style="display: none;">Antrag
                             prüfen</a>
                         <a id="HROverviewBtn" href="hr_overview" class="btn btn-success"
-                            style="display: none;">Übersicht alle
+                            style="display: none;">Übersicht
+                            alle
                             Anträge</a>
                     </div>
+                </div>
+                <div class="row">
+                    <!-- Content inside the left column aligned horizontally -->
+                    <p>Nutzername: <a id="userName2"></a></p>
+                    <p>Abteilung: <a id="UserDepartment"></a></p>
+                    <p>Verbleibende Urlaubstage: <a id="daysLeft"></a></p>
+                </div>
             </div>
-            <!-- User information section -->
-            <div id="calendar-container" class="col d-flex align-items-center justify-content-end">
+            <!-- Request information section -->
+            <div id="calendar-container" class="col-md-6 d-flex align-items-center justify-content-end">
                 <div id="calendar"></div>
             </div>
         </div>
+
 
         <!-- Display request list -->
         <div id="requestList" class="mt-4">
@@ -96,6 +115,7 @@
 
                 var role;
                 var username;
+                var department;
                 var user_id;
                 const cookies = document.cookie.split(';');
                 for (let i = 0; i < cookies.length; i++) {
@@ -107,6 +127,8 @@
                         user_id = cookie.split('user_id=')[1];
                     } else if (cookie.startsWith('username' + '=')) {
                         username = cookie.split('username=')[1];
+                    } else if (cookie.startsWith('department' + '=')) {
+                        department = cookie.split('department=')[1];
                     }
                 }
 
@@ -127,7 +149,9 @@
                 }
 
                 // Display user information
-                document.getElementById('userName').innerText = username;
+                document.getElementById('userName').innerText = username != !username ? username : 'n.a.';
+                document.getElementById('userName2').innerText = username != !username ? username : 'n.a.';
+                document.getElementById('UserDepartment').innerText = department != !department ? department : 'n.a.';
 
                 // Check if the user is a manager/hr and show the buttons accordingly
                 if (role === 'Manager') {
@@ -175,6 +199,46 @@
                             events.push(ev);
                         }
                     });
+
+                    // Get colleagues vacation_requests
+                    const otherResponse = await fetch(`/get-dep-vacation-requests/${user_id}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ department }),
+                    });
+
+                    const otherData = await otherResponse.json();
+
+                    if (otherResponse.ok) {
+                        // format data for FullCalendar
+                        otherData.forEach(request => {
+                            if (request.request_id) {
+                                var color = '';
+                                if (request.status === "beantragt") {
+                                    color = '#b4c6d0';
+                                } else if (request.status === "freigegeben") {
+                                    color = '#5a6f66';
+                                }
+                                // Parse the date string using moment
+                                const startDate = moment(request.start_date, "DD.MM.YYYY");
+                                const endDate = moment(request.end_date, "DD.MM.YYYY").add(1, 'days');
+                                const title = request.status === "freigegeben" ? 'Freigegeben' : 'Beantragt';
+                                ev2 = {
+                                    id: request.request_id,
+                                    allDay: true,
+                                    start: startDate.toDate(),
+                                    end: endDate.toDate(),
+                                    title: title,
+                                    backgroundColor: color,
+                                    display: 'background',
+                                };
+                                events.push(ev2);
+                            }
+                        });
+                    }
+
                     // Initialize FullCalendar
                     $('#calendar').fullCalendar({
                         height: 'auto',
@@ -185,7 +249,7 @@
                     // Display the data in table -> rows with buttons for accepting and denying request
                     const requestListBody = document.getElementById('requestListBody');
                     data.forEach(request => {
-                        if (request.request_id && request.status === "beantragt" || request.status === "freigegeben") {
+                        if (request.request_id && request.user_id && (request.status === "beantragt" || request.status === "freigegeben")) {
                             requestListBody.innerHTML += `
                                     <tr>
                                         <td>${request.request_id}</td>
@@ -300,21 +364,13 @@
             // Retrieve additional data from the confirm button
             const action = document.getElementById('confirmActionBtn').dataset.action;
             const request_id = document.getElementById('confirmActionBtn').dataset.requestId;
-            var user_id;
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                // Check if this is the cookie we're looking for
-                if (cookie.startsWith('user_id' + '=')) {
-                    user_id = cookie.split('user_id=')[1];
-                }
-            }
+
             const response = await fetch(`/user-response`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ user_id, action, request_id }),
+                body: JSON.stringify({ action, request_id }),
             });
 
             if (response.ok) {
@@ -322,11 +378,8 @@
                 location.reload();
             } else {
                 // Handle login error
-                console.error(data.error);
+                console.error(error);
             }
-
-            // Close the modal
-            confirmationModal.hide();
         }
     </script>
 </body>
