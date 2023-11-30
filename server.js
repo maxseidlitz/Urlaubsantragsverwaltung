@@ -299,7 +299,7 @@ app.post("/get-dep-vacation-requests/:user_id", [verifyToken], (req, res) => {
   const department = req.body.department;
   try {
     pool.query(
-      `SELECT vr.request_id,vr.start_date,vr.end_date,vr.status FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.department='${department}' AND (vr.status='freigegeben' OR vr.status='beantragt') AND NOT (vr.user_id=${user_id}) ORDER BY vr.request_id DESC;`,
+      `SELECT vr.request_id,vr.start_date,vr.end_date,vr.status FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.department='${department}' AND (vr.status='freigegeben' OR vr.status='beantragt' OR vr.status='genommen') AND NOT (vr.user_id=${user_id}) ORDER BY vr.request_id DESC;`,
       (error, results) => {
         if (error) {
           console.error("Error getting data:", error);
