@@ -171,11 +171,11 @@
                     },
                 });
 
-                const days = await res.json();
+                const { days, vac_claim } = await res.json();
 
                 if (res.ok) {
-                    const remDays = days.days;
-                    document.getElementById('daysLeft').innerText = remDays;
+                    const remDays = days;
+                    document.getElementById('daysLeft').innerText = remDays + '/' + vac_claim;
                 } else {
                     document.getElementById('daysLeft').innerText = 'n.a.';
                 }

@@ -424,7 +424,8 @@ app.post("/get-left-vacation-days/:user_id", [verifyToken], (req, res) => {
             days = row.vacation_days + days;
           });
           daysObj = {
-            days: 30 - days,
+            days: vacation_claim - days,
+            vac_claim: vacation_claim,
           };
           res.status(200).json(daysObj);
         }
