@@ -122,10 +122,6 @@ app.post("/register", (req, res) => {
 
       pool
         .query(insertQuery, values)
-        .then(() => {
-          // Registration successful; redirect to a login page or success page
-          res.redirect("/login");
-        })
         .catch((error) => {
           console.error("Error inserting into database:", error);
           res.status(500).send("Registration failed");
@@ -226,24 +222,6 @@ app.post("/hr-check", [verifyToken, verifyHR], (req, res) => {
   );
 });
 
-app.post("/departments", [verifyToken, verifyAdmin], (req, res) => {
-  try {
-    pool.query(
-      `SELECT DISTINCT department FROM public.users ORDER BY department ASC`,
-      (error, results) => {
-        if (error) {
-          console.error("Error getting data:", error);
-          res.status(500).send("Error getting data from the database");
-        } else {
-          res.status(200).send(results.rows);
-        }
-      }
-    );
-  } catch (error) {
-    console.error("Error getting request information:", error);
-  }
-});
-
 // for the employee:
 app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
   // Get vacation requests
@@ -299,7 +277,7 @@ app.post("/get-dep-vacation-requests/:user_id", [verifyToken], (req, res) => {
   const department = req.body.department;
   try {
     pool.query(
-      `SELECT vr.request_id,vr.start_date,vr.end_date,vr.status FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.department='${department}' AND (vr.status='freigegeben' OR vr.status='beantragt' OR vr.status='genommen') AND NOT (vr.user_id=${user_id}) ORDER BY vr.request_id DESC;`,
+      `SELECT vr.request_id,vr.start_date,vr.end_date,vr.status,u.username FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.department='${department}' AND (vr.status='freigegeben' OR vr.status='beantragt' OR vr.status='genommen') AND NOT (vr.user_id=${user_id}) ORDER BY vr.request_id DESC;`,
       (error, results) => {
         if (error) {
           console.error("Error getting data:", error);
@@ -373,6 +351,32 @@ app.post(
               row.start_date = start;
               row.end_date = end;
             });
+            res.status(200).json(results.rows);
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error getting request information:", error);
+    }
+  }
+);
+
+// for the manager - get the amount of open requests:
+app.post(
+  "/get-employee-requests-count/:user_id",
+  [verifyToken, verifyManager],
+  (req, res) => {
+    // Get vacation requests
+    const user_id = req.params.user_id;
+    try {
+      pool.query(
+        "SELECT COUNT(*) FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.manager_id=$1 AND vr.status='beantragt'",
+        [user_id],
+        (error, results) => {
+          if (error) {
+            console.error("Error getting data:", error);
+            res.status(500).send("Error getting data from the database");
+          } else {
             res.status(200).json(results.rows);
           }
         }
@@ -534,7 +538,7 @@ app.post("/get-all-requests/", [verifyToken, verifyHR], (req, res) => {
 app.post("/get-all-users/", [verifyToken, verifyAdmin], (req, res) => {
   // Get users
   try {
-    pool.query(`SELECT * FROM public.users`, (error, results) => {
+    pool.query(`SELECT * FROM public.users ORDER BY user_id`, (error, results) => {
       if (error) {
         console.error("Error getting data:", error);
         res.status(500).send("Error getting data from the database");

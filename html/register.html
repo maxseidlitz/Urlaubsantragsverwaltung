@@ -13,7 +13,8 @@
 <body>
     <div class="container">
         <h1 class="mt-4">Registriere eine Nutzer*in</h1>
-        <form id="register-form" action="http://localhost:3000/register" method="POST">
+        <form id="register-form" action="http://localhost:3000/register" method="POST"
+            onsubmit="return validateForm(event)">
             <div class="form-group">
                 <label for="username">Name:</label>
                 <input type="text" class="form-control" id="username" name="username" required>
@@ -41,56 +42,104 @@
 
             <div class="form-group">
                 <label for="department">Abteilung:</label>
-                <select class="form-control" id="departmentDropdown" name="departmentDropdown" required>
-                </select>
+                <input type="text" class="form-control" id="department" name="department" required>
             </div>
 
             <div class="form-group">
                 <label for="manager">Manager ID:</label>
                 <input type="text" class="form-control" id="manager" name="manager" required>
             </div>
-            
+
             <div class="form-group">
                 <label for="vacation_claim">Urlaubsanspruch:</label>
-                <input type="text" class="form-control" id="vacation_claim" name="vacation_claim">
+                <input type="text" class="form-control" id="vacation_claim" name="vacation_claim" required>
             </div>
-
+            <br>
             <button type="submit" class="btn btn-primary">Register</button>
         </form>
     </div>
     <script>
-        document.addEventListener('DOMContentLoaded', async function () {
+        function validateForm(event) {
+            event.preventDefault();
+            var username = document.getElementById('username').value;
+            var password = document.getElementById('password').value;
+            var manager = document.getElementById('manager').value; // later on check if manager exists!
+            var vacation_claim = document.getElementById('vacation_claim').value;
+
+            if (username.length < 2) {
+                alert('Der Nutername muss mehr als 2 Zeichen haben.');
+                return false;
+            }
+
+            if (password.length < 3) {
+                alert('Das Password muss mehr als 3 Zeichen haben.');
+                return false;
+            }
+
+            // Check if manager id is a number
+            if (isNaN(manager)) {
+                alert('Manager ID muss eine Nummer sein.');
+                return false;
+            }
+
+            // Check if vacation_claim is a number
+            if (isNaN(vacation_claim)) {
+                alert('Der Urlaubsanspruch muss eine Nummer sein.');
+                return false;
+            }
+
+            if (vacation_claim > 30) {
+                alert('Der Urlaubsanspruch darf maximal 30 Tagen entsprechen.');
+                return false;
+            }
+
+            if (vacation_claim <= 0) {
+                alert('Der Urlaubsanspruch darf minimal 1 Tag entsprechen.');
+                return false;
+            }
+
+            registerUser();
+            return true;
+        }
+
+        async function registerUser() {
+            var username = document.getElementById('username').value;
+            var email = document.getElementById('email').value;
+            var password = document.getElementById('password').value;
+            var role = document.getElementById('role').value;
+            var department = document.getElementById('department').value;
+            var manager = document.getElementById('manager').value; // later on check if manager exists!
+            var vacation_claim = document.getElementById('vacation_claim').value;
+
             try {
-                // Get employees vacation_requests
-                const response = await fetch(`/departments`, {
+                const response = await fetch('/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
+                    body: JSON.stringify({ username, email, password, role, department, manager, vacation_claim }),
                 });
 
-                const data = await response.json();
-
                 if (response.ok) {
-                    // Display the data in table -> rows with buttons for accepting and denying request
-                    const requestListBody = document.getElementById('departmentDropdown');
-                    data.forEach(request => {
-                        if (request.department) {
-                            requestListBody.innerHTML += `
-                                <option value="${request.department}">${request.department}</option>
-                            `;
-                        }
-                    });
-
+                    // If login is successful, extract the token
+                    location.reload();
+                    document.getElementById('username').value = '';
+                    document.getElementById('email').value = '';
+                    document.getElementById('password').value = '';
+                    document.getElementById('role').value;
+                    document.getElementById('department').value = '';
+                    document.getElementById('manager').value = ''; // later on check if manager exists!
+                    document.getElementById('vacation_claim').value = '';
 
                 } else {
                     // Handle login error
                     console.error(data.error);
                 }
             } catch (error) {
-                console.error('Error getting department information:', error);
+                console.error(error);
+                // console.error('Error during login:', error);
             }
-        });
+        }
     </script>
 </body>
 
