@@ -82,7 +82,7 @@
                         <a id="HROverviewBtn" href="hr_overview" class="btn btn-success"
                             style="display: none;">Übersicht
                             alle
-                            Anträge</a>
+                            Anträge <span id="HRnotificationBadge" class="badge bg-secondary">0</span></a>
                     </div>
                 </div>
                 <div class="row">
@@ -220,6 +220,24 @@
                     }
                 } else if (role === 'HR') {
                     document.getElementById('HROverviewBtn').style.display = 'block';
+                    const CountRes = await fetch(`/get-employee-requests-count-hr-check`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+
+                    const count = await CountRes.json();
+
+                    if (CountRes.ok) {
+                        if (count[0].count > '0') {
+                            document.getElementById('HRnotificationBadge').className = 'badge bg-danger';
+                            document.getElementById('HRnotificationBadge').innerText = count[0].count;
+                        } else if (count[0].count = '0') {
+                            document.getElementById('HRnotificationBadge').className = 'badge bg-secondary';
+                            document.getElementById('HRnotificationBadge').innerText = count[0].count;
+                        }
+                    }
                 }
 
                 // Get employees vacation_requests

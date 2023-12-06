@@ -65,13 +65,16 @@ async function changeRequestStatus(request_id, status) {
       (error, results) => {
         if (error) {
           console.error("Error updating data:", error);
+          return false;
         } else {
           console.log("Update successfull.");
+          return true;
         }
       }
     );
   } catch (error) {
     console.error("Error updating request status:", error);
+    return false;
   }
 }
 
@@ -387,6 +390,29 @@ app.post(
   }
 );
 
+// for the HR - get the amount of open requests:
+app.post(
+  "/get-employee-requests-count-hr-check",
+  [verifyToken, verifyHR],
+  (req, res) => {
+    try {
+      pool.query(
+        "SELECT COUNT(*) FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE hr_checked=false AND (status='freigegeben' OR status='abgelehnt' OR status='genommen' OR status='storniert')",
+        (error, results) => {
+          if (error) {
+            console.error("Error getting data:", error);
+            res.status(500).send("Error getting data from the database");
+          } else {
+            res.status(200).json(results.rows);
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error getting request information:", error);
+    }
+  }
+);
+
 // Get the days, that the employee has left
 app.post("/get-left-vacation-days/:user_id", [verifyToken], (req, res) => {
   // Get vacation requests
@@ -598,7 +624,11 @@ app.post("/user-response", [verifyToken], (req, res) => {
   if (action === "Stornieren") {
     status = "storniert";
   }
-  changeRequestStatus(request_id, status);
+  if (changeRequestStatus(request_id, status)) {
+    res.status(200).send("Update successfull");
+  } else {
+    res.status(500).send("Changing the request status was not possible.");
+  }
 });
 
 // app GET
