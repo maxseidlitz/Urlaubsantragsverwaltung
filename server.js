@@ -577,6 +577,23 @@ app.post("/get-all-users/", [verifyToken, verifyAdmin], (req, res) => {
   }
 });
 
+// for hr
+app.post("/get-all-users-hr/", [verifyToken, verifyHR], (req, res) => {
+  // Get users
+  try {
+    pool.query(`SELECT * FROM public.users ORDER BY user_id`, (error, results) => {
+      if (error) {
+        console.error("Error getting data:", error);
+        res.status(500).send("Error getting data from the database");
+      } else {
+        res.status(200).json(results.rows);
+      }
+    });
+  } catch (error) {
+    console.error("Error getting request information:", error);
+  }
+});
+
 // Load response from vacation request into db
 app.post("/manager-response", [verifyToken, verifyManager], (req, res) => {
   // Get vacation requests
@@ -662,10 +679,16 @@ app.get("/antrag_pruefen", [verifyToken, verifyManager], (req, res) => {
   res.sendFile(__dirname + "/html/antrag_pruefen.html");
 });
 
-// HR Panel route
-app.get("/hr_overview", [verifyToken, verifyHR], (req, res) => {
+// HR request Overview route
+app.get("/hr_request_overview", [verifyToken, verifyHR], (req, res) => {
   // Serve the protected HTML file
-  res.sendFile(__dirname + "/html/hr_overview.html");
+  res.sendFile(__dirname + "/html/hr_request_overview.html");
+});
+
+// HR user overview route
+app.get("/hr_user_overview", [verifyToken, verifyHR], (req, res) => {
+  // Serve the protected HTML file
+  res.sendFile(__dirname + "/html/hr_user_overview.html");
 });
 
 // Admin Panel route

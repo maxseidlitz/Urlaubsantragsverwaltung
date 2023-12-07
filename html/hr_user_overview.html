@@ -7,42 +7,38 @@
     <!-- Verknüpfung zu Bootstrap-CSS hinzufügen -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
         integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <title>Admin Panel</title>
+    <title>Übersicht der Nutzer:innen</title>
 </head>
 
 <body>
     <style>
         /* Style for user information */
-        
     </style>
     <div class="container">
-        <div class="row">
-            <div class="col">
-                <h1 class="mt-4">Nutzerübersicht</h1>
-                <p>Willkommen zur Nutzerübersicht.</p>
-            </div>
-            <!-- User information section -->
-            <div id="newuser" class="col d-flex align-items-center justify-content-end">
-                <a id="newUser" href="register-user" class="btn btn-primary">Neuer Nutzer</a>
-            </div>
+        <a href="main" class="btn btn-primary">Zurück</a>
+        <div class="col">
+            <h1 class="mt-4">Nutzer:innen-Liste</h1>
+            <p>Willkommen zur Übersicht.</p>
         </div>
 
         <!-- Display user list -->
-        <div id="requestList" class="mt-4">
-            <h2>Nutzer:innen List</h2>
+        <div id="userList" class="mt-4">
+            <h2>User List</h2>
             <div class="table-responsive">
                 <table class="table table-bordered">
                     <thead>
                         <tr>
                             <th>User ID</th>
-                            <th>Nutzername</th>
+                            <th>Name</th>
                             <th>E-Mail</th>
                             <th>Rolle</th>
                             <th>Manager ID</th>
+                            <th>Abteilung</th>
+                            <th>Urlaubsanspruch</th>
                             <th>Aktion</th>
                         </tr>
                     </thead>
-                    <tbody id="requestListBody"></tbody>
+                    <tbody id="userListBody"></tbody>
                 </table>
             </div>
         </div>
@@ -79,7 +75,7 @@
         document.addEventListener('DOMContentLoaded', async function () {
             try {
                 // Get employees
-                const response = await fetch(`/get-all-users/`, {
+                const response = await fetch(`/get-all-users-hr/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -89,17 +85,18 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Display the data in table -> rows with buttons for accepting and denying request
-                    const requestListBody = document.getElementById('requestListBody');
+                    const userListBody = document.getElementById('userListBody');
                     data.forEach(request => {
                         if (request.user_id) {
-                            requestListBody.innerHTML += `
+                            userListBody.innerHTML += `
                                 <tr>
                                     <td>${request.user_id}</td>
                                     <td>${request.username}</td>
                                     <td>${request.email}</td>
                                     <td>${request.role}</td>
                                     <td>${request.manager_id}</td>
+                                    <td>${request.department}</td>
+                                    <td>${request.vacation_claim}</td>
                                     <td>
                                         <button class="btn btn-success" onclick="showConfirmationModal('Bearbeiten', ${request.user_id})">Bearbeiten</button>
                                         <button class="btn btn-danger" onclick="showConfirmationModal('Löschen', ${request.user_id})">Löschen</button>
