@@ -321,7 +321,7 @@ app.post("/get-dep-vacation-requests/:user_id", [verifyToken], (req, res) => {
   const department = req.body.department;
   try {
     pool.query(
-      `SELECT vr.request_id,vr.start_date,vr.end_date,vr.status,u.username FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.department='${department}' AND (vr.status='freigegeben' OR vr.status='beantragt' OR vr.status='genommen') AND NOT (vr.user_id=${user_id}) ORDER BY vr.request_id DESC;`,
+      `SELECT vr.request_id,vr.start_date,vr.end_date,vr.status,u.username FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.department='${department}' AND (vr.status='freigegeben' OR vr.status='beantragt' OR vr.status='genommen') AND NOT (vr.user_id=${user_id}) AND u.deactivated=false ORDER BY vr.request_id DESC;`,
       (error, results) => {
         if (error) {
           console.error("Error getting data:", error);
@@ -360,7 +360,7 @@ app.post(
     const department = req.body.department;
     try {
       pool.query(
-        "SELECT * FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.manager_id=$1 AND u.department=$2 ORDER BY request_id DESC",
+        "SELECT * FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.manager_id=$1 AND u.department=$2 AND u.deactivated=false ORDER BY request_id DESC",
         [user_id, department],
         (error, results) => {
           if (error) {
@@ -414,7 +414,7 @@ app.post(
     const user_id = req.params.user_id;
     try {
       pool.query(
-        "SELECT COUNT(*) FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.manager_id=$1 AND vr.status='beantragt'",
+        "SELECT COUNT(*) FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.manager_id=$1 AND vr.status='beantragt' AND u.deactivated=false",
         [user_id],
         (error, results) => {
           if (error) {
@@ -438,7 +438,7 @@ app.post(
   (req, res) => {
     try {
       pool.query(
-        "SELECT COUNT(*) FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE hr_checked=false AND (status='freigegeben' OR status='abgelehnt' OR status='genommen' OR status='storniert')",
+        "SELECT COUNT(*) FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE hr_checked=false AND (status='freigegeben' OR status='abgelehnt' OR status='genommen' OR status='storniert') AND u.deactivated=false",
         (error, results) => {
           if (error) {
             console.error("Error getting data:", error);
@@ -461,7 +461,7 @@ app.post("/get-left-vacation-days/:user_id", [verifyToken], (req, res) => {
   try {
     var vacation_claim = 0;
     pool.query(
-      `SELECT vacation_claim FROM public.users WHERE user_id=${user_id}`,
+      `SELECT vacation_claim FROM public.users WHERE user_id=${user_id} AND deactivated=false`,
       (error, results) => {
         if (error) {
           console.error("Error getting data:", error);
@@ -515,7 +515,7 @@ app.post(
     const manager_id = req.params.user_id;
     try {
       pool.query(
-        `SELECT DISTINCT department FROM public.users WHERE manager_id=${manager_id}`,
+        `SELECT DISTINCT department FROM public.users WHERE manager_id=${manager_id} AND deactivated=false`,
         (error, results) => {
           if (error) {
             console.error("Error getting data:", error);
