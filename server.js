@@ -209,6 +209,7 @@ app.post("/process-form", (req, res) => {
   );
 });
 
+// Update check for vac requests
 app.post("/hr-check", [verifyToken, verifyHR], (req, res) => {
   const { bool, request_id } = req.body;
 
@@ -224,6 +225,46 @@ app.post("/hr-check", [verifyToken, verifyHR], (req, res) => {
     }
   );
 });
+
+// HR Update user data
+app.post("/hr-update-user/:user_id", [verifyToken, verifyHR], (req, res) => {
+  const user_id = req.params.user_id;
+  const manager_id = req.body.man_id;
+  const department = req.body.dep;
+
+  pool.query(
+    `UPDATE public.users SET manager_id=${manager_id}, department='${department}' WHERE user_id=${user_id};`,
+    (error, results) => {
+      if (error) {
+        console.error("Error updating user data:", error);
+        res.status(500).send("Error updating user data in the database");
+      } else {
+        res.status(200).send("User was successfully updated.");
+      }
+    }
+  );
+});
+
+// HR Deactivate user
+app.post(
+  "/hr-deactivate-user/:user_id",
+  [verifyToken, verifyHR],
+  (req, res) => {
+    const user_id = req.params.user_id;
+
+    pool.query(
+      `UPDATE public.users SET deactivated=true WHERE user_id=${user_id};`,
+      (error, results) => {
+        if (error) {
+          console.error("Error deactivating user data:", error);
+          res.status(500).send("Error deactivating user in the database");
+        } else {
+          res.status(200).send("User was successfully deactivated.");
+        }
+      }
+    );
+  }
+);
 
 // for the employee:
 app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
@@ -280,7 +321,7 @@ app.post("/get-dep-vacation-requests/:user_id", [verifyToken], (req, res) => {
   const department = req.body.department;
   try {
     pool.query(
-      `SELECT vr.request_id,vr.start_date,vr.end_date,vr.status,u.username FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.department='${department}' AND (vr.status='freigegeben' OR vr.status='beantragt' OR vr.status='genommen') AND NOT (vr.user_id=${user_id}) ORDER BY vr.request_id DESC;`,
+      `SELECT vr.request_id,vr.start_date,vr.end_date,vr.status,u.username FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.department='${department}' AND (vr.status='freigegeben' OR vr.status='beantragt' OR vr.status='genommen') AND NOT (vr.user_id=${user_id}) AND u.deactivated=false ORDER BY vr.request_id DESC;`,
       (error, results) => {
         if (error) {
           console.error("Error getting data:", error);
@@ -319,7 +360,7 @@ app.post(
     const department = req.body.department;
     try {
       pool.query(
-        "SELECT * FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.manager_id=$1 AND u.department=$2 ORDER BY request_id DESC",
+        "SELECT * FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.manager_id=$1 AND u.department=$2 AND u.deactivated=false ORDER BY request_id DESC",
         [user_id, department],
         (error, results) => {
           if (error) {
@@ -373,7 +414,7 @@ app.post(
     const user_id = req.params.user_id;
     try {
       pool.query(
-        "SELECT COUNT(*) FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.manager_id=$1 AND vr.status='beantragt'",
+        "SELECT COUNT(*) FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE u.manager_id=$1 AND vr.status='beantragt' AND u.deactivated=false",
         [user_id],
         (error, results) => {
           if (error) {
@@ -397,7 +438,7 @@ app.post(
   (req, res) => {
     try {
       pool.query(
-        "SELECT COUNT(*) FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE hr_checked=false AND (status='freigegeben' OR status='abgelehnt' OR status='genommen' OR status='storniert')",
+        "SELECT COUNT(*) FROM public.vacation_request vr JOIN users u ON vr.user_id=u.user_id WHERE hr_checked=false AND (status='freigegeben' OR status='abgelehnt' OR status='genommen' OR status='storniert') AND u.deactivated=false",
         (error, results) => {
           if (error) {
             console.error("Error getting data:", error);
@@ -420,7 +461,7 @@ app.post("/get-left-vacation-days/:user_id", [verifyToken], (req, res) => {
   try {
     var vacation_claim = 0;
     pool.query(
-      `SELECT vacation_claim FROM public.users WHERE user_id=${user_id}`,
+      `SELECT vacation_claim FROM public.users WHERE user_id=${user_id} AND deactivated=false`,
       (error, results) => {
         if (error) {
           console.error("Error getting data:", error);
@@ -474,7 +515,7 @@ app.post(
     const manager_id = req.params.user_id;
     try {
       pool.query(
-        `SELECT DISTINCT department FROM public.users WHERE manager_id=${manager_id}`,
+        `SELECT DISTINCT department FROM public.users WHERE manager_id=${manager_id} AND deactivated=false`,
         (error, results) => {
           if (error) {
             console.error("Error getting data:", error);
@@ -577,6 +618,23 @@ app.post("/get-all-users/", [verifyToken, verifyAdmin], (req, res) => {
   }
 });
 
+// for hr
+app.post("/get-all-users-hr/", [verifyToken, verifyHR], (req, res) => {
+  // Get users
+  try {
+    pool.query(`SELECT * FROM public.users ORDER BY user_id`, (error, results) => {
+      if (error) {
+        console.error("Error getting data:", error);
+        res.status(500).send("Error getting data from the database");
+      } else {
+        res.status(200).json(results.rows);
+      }
+    });
+  } catch (error) {
+    console.error("Error getting request information:", error);
+  }
+});
+
 // Load response from vacation request into db
 app.post("/manager-response", [verifyToken, verifyManager], (req, res) => {
   // Get vacation requests
@@ -662,10 +720,16 @@ app.get("/antrag_pruefen", [verifyToken, verifyManager], (req, res) => {
   res.sendFile(__dirname + "/html/antrag_pruefen.html");
 });
 
-// HR Panel route
-app.get("/hr_overview", [verifyToken, verifyHR], (req, res) => {
+// HR request Overview route
+app.get("/hr_request_overview", [verifyToken, verifyHR], (req, res) => {
   // Serve the protected HTML file
-  res.sendFile(__dirname + "/html/hr_overview.html");
+  res.sendFile(__dirname + "/html/hr_request_overview.html");
+});
+
+// HR user overview route
+app.get("/hr_user_overview", [verifyToken, verifyHR], (req, res) => {
+  // Serve the protected HTML file
+  res.sendFile(__dirname + "/html/hr_user_overview.html");
 });
 
 // Admin Panel route

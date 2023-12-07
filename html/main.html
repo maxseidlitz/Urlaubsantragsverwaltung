@@ -79,10 +79,14 @@
                         <a id="antragPruefenBtn" href="antrag_pruefen" class="btn btn-success"
                             style="display: none;">Antrag
                             prüfen <span id="notificationBadge" class="badge bg-secondary">0</span></a>
-                        <a id="HROverviewBtn" href="hr_overview" class="btn btn-success"
+                        <a id="HROverviewBtn" href="hr_request_overview" class="btn btn-success"
                             style="display: none;">Übersicht
-                            alle
+                            aller
                             Anträge <span id="HRnotificationBadge" class="badge bg-secondary">0</span></a>
+                        <a id="HRUserOverviewBtn" href="hr_user_overview" class="btn btn-primary"
+                            style="display: none;">Übersicht
+                            aller
+                            Nutzer:innen</a>
                     </div>
                 </div>
                 <div class="row">
@@ -220,6 +224,7 @@
                     }
                 } else if (role === 'HR') {
                     document.getElementById('HROverviewBtn').style.display = 'block';
+                    document.getElementById('HRUserOverviewBtn').style.display = 'block';
                     const CountRes = await fetch(`/get-employee-requests-count-hr-check`, {
                         method: 'POST',
                         headers: {
@@ -348,7 +353,7 @@
                                         <td>${request.reason}</td>
                                         <td>${request.manager_id}</td>
                                         <td>
-                                            <button class="btn btn-success" onclick="showConfirmationModal('Stornieren', ${request.request_id})">Stornieren</button>
+                                            <button class="btn btn-danger" onclick="showConfirmationModal('Stornieren', ${request.request_id})">Stornieren</button>
                                             <button type="button" class="btn btn-outline-secondary" onclick="getIcsFile(${request.request_id}, ${request.user_id})">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download" viewBox="0 0 16 16">
                                                     <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"></path>
