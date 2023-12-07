@@ -209,6 +209,7 @@ app.post("/process-form", (req, res) => {
   );
 });
 
+// Update check for vac requests
 app.post("/hr-check", [verifyToken, verifyHR], (req, res) => {
   const { bool, request_id } = req.body;
 
@@ -224,6 +225,46 @@ app.post("/hr-check", [verifyToken, verifyHR], (req, res) => {
     }
   );
 });
+
+// HR Update user data
+app.post("/hr-update-user/:user_id", [verifyToken, verifyHR], (req, res) => {
+  const user_id = req.params.user_id;
+  const manager_id = req.body.man_id;
+  const department = req.body.dep;
+
+  pool.query(
+    `UPDATE public.users SET manager_id=${manager_id}, department='${department}' WHERE user_id=${user_id};`,
+    (error, results) => {
+      if (error) {
+        console.error("Error updating user data:", error);
+        res.status(500).send("Error updating user data in the database");
+      } else {
+        res.status(200).send("User was successfully updated.");
+      }
+    }
+  );
+});
+
+// HR Deactivate user
+app.post(
+  "/hr-deactivate-user/:user_id",
+  [verifyToken, verifyHR],
+  (req, res) => {
+    const user_id = req.params.user_id;
+
+    pool.query(
+      `UPDATE public.users SET deactivated=true WHERE user_id=${user_id};`,
+      (error, results) => {
+        if (error) {
+          console.error("Error deactivating user data:", error);
+          res.status(500).send("Error deactivating user in the database");
+        } else {
+          res.status(200).send("User was successfully deactivated.");
+        }
+      }
+    );
+  }
+);
 
 // for the employee:
 app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {

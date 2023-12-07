@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Verknüpfung zu Bootstrap-CSS hinzufügen -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <title>Übersicht der Nutzer:innen</title>
 </head>
@@ -13,6 +13,9 @@
 <body>
     <style>
         /* Style for user information */
+        .deactivated-row td {
+            color: grey !important;
+        }
     </style>
     <div class="container">
         <a href="main" class="btn btn-primary">Zurück</a>
@@ -42,32 +45,94 @@
                 </table>
             </div>
         </div>
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-        <!-- Latest compiled and minified JavaScript -->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-            integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
-            crossorigin="anonymous"></script>
 
-        <!-- Bootstrap Modal for Confirmation -->
-        <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel"
+        <!-- Edit User Modal -->
+        <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel"
             aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="confirmationModalLabel">Confirmation</h5>
+                        <h5 class="modal-title" id="editUserModalLabel">Nutzer bearbeiten</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        Möchten Sie wirklich fortfahren?
+                        <!-- Add your user edit form here -->
+                        <form id="editUserForm">
+                            <!-- Add form fields for editing user data -->
+                            <label for="editUsername">Name:</label>
+                            <input type="text" class="form-control" id="editUsername" name="editUsername" readonly>
+
+                            <label for="editEmail">E-Mail:</label>
+                            <input type="email" class="form-control" id="editEmail" name="editEmail" readonly>
+
+                            <label for="editRole">Rolle:</label>
+                            <input type="text" class="form-control" id="editRole" name="editRole" readonly>
+
+                            <label for="editManagerId">Manager ID:</label>
+                            <input type="text" class="form-control" id="editManagerId" name="editManagerId" required>
+
+                            <label for="editDepartment">Abteilung:</label>
+                            <input type="text" class="form-control" id="editDepartment" name="editDepartment" required>
+
+                            <label for="editVacationClaim">Urlaubsanspruch</label>
+                            <input type="text" class="form-control" id="editVacationClaim" name="editVacationClaim"
+                                readonly>
+                            <br>
+                            <button type="submit" class="btn btn-primary">Speichern</button>
+                        </form>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
-                        <button type="button" class="btn btn-primary" id="confirmActionBtn">Bestätigen</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deactivate User Modal -->
+        <div class="modal fade" id="deactivateUserModal" tabindex="-1" aria-labelledby="deactivateUserModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deactivateUserModalLabel">Nutzer deaktivieren</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="deactivateUserForm">
+                            <!-- Add form fields for displaying user data -->
+                            <label for="deactivateUsername">Name:</label>
+                            <input type="text" class="form-control" id="deactivateUsername" name="deactivateUsername"
+                                readonly>
+
+                            <label for="deactivateEmail">E-Mail:</label>
+                            <input type="email" class="form-control" id="deactivateEmail" name="deactivateEmail"
+                                readonly>
+
+                            <label for="deactivateRole">Rolle:</label>
+                            <input type="text" class="form-control" id="deactivateRole" name="deactivateRole" readonly>
+
+                            <label for="deactivateManagerId">Manager ID:</label>
+                            <input type="text" class="form-control" id="deactivateManagerId" name="deactivateManagerId"
+                                readonly>
+
+                            <label for="deactivateDepartment">Abteilung:</label>
+                            <input type="text" class="form-control" id="deactivateDepartment"
+                                name="deactivateDepartment" readonly>
+
+                            <label for="deactivateVacationClaim">Urlaubsanspruch</label>
+                            <input type="text" class="form-control" id="deactivateVacationClaim"
+                                name="deactivateVacationClaim" readonly>
+                            <br>
+                            <button type="submit" class="btn btn-danger">Deaktivieren</button>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
 
     <!-- JavaScript to fetch and display user data -->
     <script>
@@ -88,8 +153,9 @@
                     const userListBody = document.getElementById('userListBody');
                     data.forEach(request => {
                         if (request.user_id) {
+                            const rowClass = request.deactivated ? 'deactivated-row' : '';
                             userListBody.innerHTML += `
-                                <tr>
+                                <tr class="${rowClass}">
                                     <td>${request.user_id}</td>
                                     <td>${request.username}</td>
                                     <td>${request.email}</td>
@@ -98,8 +164,8 @@
                                     <td>${request.department}</td>
                                     <td>${request.vacation_claim}</td>
                                     <td>
-                                        <button class="btn btn-success" onclick="showConfirmationModal('Bearbeiten', ${request.user_id})">Bearbeiten</button>
-                                        <button class="btn btn-danger" onclick="showConfirmationModal('Löschen', ${request.user_id})">Löschen</button>
+                                        ${!request.deactivated ? `<button class="btn btn-success" onclick="showEditUserModal(${request.user_id}, '${request.username}', '${request.email}', '${request.role}', ${request.manager_id}, '${request.department}', ${request.vacation_claim})">Bearbeiten</button>` : ''}
+                                        ${!request.deactivated ? `<button class="btn btn-danger" onclick="showDeactivateUserModal(${request.user_id}, '${request.username}', '${request.email}', '${request.role}', ${request.manager_id}, '${request.department}', ${request.vacation_claim})">Deaktivieren</button>` : ''}
                                     </td>
                                 </tr>`;
                         }
@@ -115,59 +181,86 @@
             }
         });
 
-        // Enable Bootstrap modals
-        var confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
-
-        // Set up event listener for the confirm action button
-        document.getElementById('confirmActionBtn').addEventListener('click', confirmAction);
-
-        function showConfirmationModal(action, userId) {
-            // Set the modal content based on the chosen action
-            const modalBody = document.querySelector('#confirmationModal .modal-body');
-            modalBody.innerHTML = `Sind Sie sicher, dass sie den Nutzer <b>${userId}</b> ${action.toLowerCase()} möchten?`;
-
-            // Set the button color and label based on the chosen action
-            const confirmActionBtn = document.getElementById('confirmActionBtn');
-            confirmActionBtn.classList.remove('btn-success', 'btn-danger'); // Remove existing classes
-            confirmActionBtn.classList.add(action === 'Bearbeiten' ? 'btn-success' : 'btn-danger');
-            confirmActionBtn.textContent = action;
+        function showEditUserModal(user_id, username, email, role, manager_id, department, vacation_claim) {
+            // Populate modal fields
+            document.getElementById('editUsername').value = user_id;
+            document.getElementById('editEmail').value = email;
+            document.getElementById('editRole').value = role;
+            document.getElementById('editManagerId').value = manager_id;
+            document.getElementById('editDepartment').value = department;
+            document.getElementById('editVacationClaim').value = vacation_claim;
 
             // Show the modal
-            confirmationModal.show();
+            const editUserModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+            editUserModal.show();
 
-            // Attach additional data to the confirm button for later use
-            confirmActionBtn.dataset.action = action;
-            confirmActionBtn.dataset.userId = userId;
+            // Add an event listener for the form submission
+            const editUserForm = document.getElementById('editUserForm');
+            editUserForm.addEventListener('submit', async function (event) {
+                event.preventDefault();
+
+                const man_id = document.getElementById('editManagerId').value;
+                const dep = document.getElementById('editDepartment').value;
+
+                if (man_id != manager_id || dep != department) {
+
+                    const updateResponse = await fetch(`/hr-update-user/${user_id}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ man_id, dep }),
+                    });
+
+                    if (updateResponse.ok) {
+                        editUserModal.hide();
+                        location.reload();
+                    } else {
+                        // Handle login error
+                        console.error("Error updating user.");
+                        editUserModal.hide();
+                    }
+                } else {
+                    editUserModal.hide();
+                }
+            });
         }
 
-        async function confirmAction() {
-            // Retrieve additional data from the confirm button
-            const action = document.getElementById('confirmActionBtn').dataset.action;
-            const userId = document.getElementById('confirmActionBtn').dataset.userId;
+        // deactivate users
+        function showDeactivateUserModal(user_id, username, email, role, manager_id, department, vacation_claim) {
+            // Populate modal fields
+            document.getElementById('deactivateUsername').value = user_id;
+            document.getElementById('deactivateEmail').value = email;
+            document.getElementById('deactivateRole').value = role;
+            document.getElementById('deactivateManagerId').value = manager_id;
+            document.getElementById('deactivateDepartment').value = department;
+            document.getElementById('deactivateVacationClaim').value = vacation_claim;
 
-            if (action === "Delete") {
-                const response = await fetch(`/delete-user`, {
+            // Show the modal
+            const deactivateUserModal = new bootstrap.Modal(document.getElementById('deactivateUserModal'));
+            deactivateUserModal.show();
+
+            // Add an event listener for the form submission
+            const deactivateUserForm = document.getElementById('deactivateUserForm');
+            deactivateUserForm.addEventListener('submit', async function (event) {
+                event.preventDefault();
+
+                const deactivateResponse = await fetch(`/hr-deactivate-user/${user_id}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ user_id }),
                 });
 
-                if (response.ok) {
-                    confirmationModal.hide();
+                if (deactivateResponse.ok) {
+                    deactivateUserModal.hide();
                     location.reload();
                 } else {
                     // Handle login error
-                    console.error(data.error);
+                    console.error("Error deactivating user.");
+                    deactivateUserModal.hide();
                 }
-
-                // Close the modal
-                confirmationModal.hide();
-            } else if (action === "Bearbeiten") {
-                // open edit modal for user data editing
-                console.log("editing user data happens here!");
-            }
+            });
         }
     </script>
 </body>
