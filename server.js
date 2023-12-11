@@ -695,6 +695,12 @@ app.get("/login", (req, res) => {
   res.sendFile(__dirname + "/html/login.html");
 });
 
+app.get("/images/:img", (req, res) => {
+  // Serve the protected HTML file
+  const img = req.params.img;
+  res.sendFile(__dirname + `/images/${img}`);
+});
+
 app.get("/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
