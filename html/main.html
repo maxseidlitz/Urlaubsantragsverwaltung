@@ -96,7 +96,6 @@
                     <p><b>Verbleibende Urlaubstage</b>: <a id="daysLeft"></a></p>
                 </div>
             </div>
-            <!-- Request information section -->
             <div id="calendar-container" class="col-md-6 d-flex align-items-center justify-content-end">
                 <div id="calendar"></div>
             </div>
@@ -285,53 +284,13 @@
                         }
                     });
 
-                    // Get colleagues vacation_requests
-                    const otherResponse = await fetch(`/get-dep-vacation-requests/${user_id}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ department }),
-                    });
-
-                    const otherData = await otherResponse.json();
-
-                    if (otherResponse.ok) {
-                        // format data for FullCalendar
-                        otherData.forEach(request => {
-                            if (request.request_id) {
-                                var color = '';
-                                if (request.status === "beantragt") {
-                                    color = '#b4c6d0';
-                                } else if (request.status === "freigegeben") {
-                                    color = '#5a6f66';
-                                } else if (request.status === "genommen") {
-                                    color = '#b5c6d4';
-                                }
-                                // Parse the date string using moment
-                                const startDate = moment(request.start_date, "DD.MM.YYYY");
-                                const endDate = moment(request.end_date, "DD.MM.YYYY").add(1, 'days');
-                                const title = request.status === "freigegeben" ? 'Freigegeben' : 'Beantragt';
-
-                                ev2 = {
-                                    id: request.request_id,
-                                    allDay: true,
-                                    start: startDate.toDate(),
-                                    end: endDate.toDate(),
-                                    title: title + ' ' + request.username,
-                                    backgroundColor: color,
-                                    display: 'background',
-                                };
-                                events.push(ev2);
-                            }
-                        });
-                    }
-
                     // Initialize FullCalendar
                     $('#calendar').fullCalendar({
                         height: 'auto',
                         editable: false,
                         events: events,
+                        initialView: 'multiMonthYear',
+                        multiMonthMaxColumns: 3,
                         eventRender: function (event, element) {
                             $(element).tooltip({ title: event.title, animation: true, });
                         }
