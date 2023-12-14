@@ -102,6 +102,12 @@
             document.getElementById('ueberstundenausgleich').checked = false;
             document.getElementById('sonderurlaub').checked = false;
         }
+
+        document.getElementById('startdatum').addEventListener('change', function () {
+            const startDate = document.getElementById("startdatum").valueAsDate;
+            document.getElementById("enddatum").valueAsDate = new Date(startDate);
+        });
+
         document.addEventListener('DOMContentLoaded', async function () {
             document.getElementById('startdatum').addEventListener('change', updateUrlaubstage);
             document.getElementById('enddatum').addEventListener('change', updateUrlaubstage);
