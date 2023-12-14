@@ -13,7 +13,6 @@
 <body>
     <style>
         /* Style for user information */
-        
     </style>
     <div class="container">
         <div class="row">
@@ -66,7 +65,46 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
-                        <button type="button" class="btn btn-primary" id="confirmActionBtn">Bestätigen</button>
+                        <button type="button" class="btn btn-danger" id="confirmActionBtn">Bestätigen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit User Modal -->
+        <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editUserModalLabel">Nutzer bearbeiten</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Add your user edit form here -->
+                        <form id="editUserForm">
+                            <!-- Add form fields for editing user data -->
+                            <label for="editUsername">Name:</label>
+                            <input type="text" class="form-control" id="editUsername" name="editUsername" required>
+
+                            <label for="editEmail">E-Mail:</label>
+                            <input type="email" class="form-control" id="editEmail" name="editEmail" required>
+
+                            <label for="editRole">Rolle:</label>
+                            <input type="text" class="form-control" id="editRole" name="editRole" required>
+
+                            <label for="editManagerId">Manager ID:</label>
+                            <input type="text" class="form-control" id="editManagerId" name="editManagerId" required>
+
+                            <label for="editDepartment">Abteilung:</label>
+                            <input type="text" class="form-control" id="editDepartment" name="editDepartment" required>
+
+                            <label for="editVacationClaim">Urlaubsanspruch</label>
+                            <input type="text" class="form-control" id="editVacationClaim" name="editVacationClaim"
+                                required>
+                            <br>
+                            <button type="submit" class="btn btn-primary">Speichern</button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -101,7 +139,7 @@
                                     <td>${request.role}</td>
                                     <td>${request.manager_id}</td>
                                     <td>
-                                        <button class="btn btn-success" onclick="showConfirmationModal('Bearbeiten', ${request.user_id})">Bearbeiten</button>
+                                        <button class="btn btn-success" onclick="showEditUserModal(${request.user_id}, '${request.username}', '${request.email}', '${request.role}', ${request.manager_id}, '${request.department}', ${request.vacation_claim})">Bearbeiten</button>
                                         <button class="btn btn-danger" onclick="showConfirmationModal('Löschen', ${request.user_id})">Löschen</button>
                                     </td>
                                 </tr>`;
@@ -117,6 +155,55 @@
                 console.error('Error getting user information:', error);
             }
         });
+
+        function showEditUserModal(user_id, username, email, role, manager_id, department, vacation_claim) {
+            // Populate modal fields
+            document.getElementById('editUsername').value = username;
+            document.getElementById('editEmail').value = email;
+            document.getElementById('editRole').value = role;
+            document.getElementById('editManagerId').value = manager_id;
+            document.getElementById('editDepartment').value = department;
+            document.getElementById('editVacationClaim').value = vacation_claim;
+
+            // Show the modal
+            const editUserModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+            editUserModal.show();
+
+            // Add an event listener for the form submission
+            const editUserForm = document.getElementById('editUserForm');
+            editUserForm.addEventListener('submit', async function (event) {
+                event.preventDefault();
+
+                const editManager_id = document.getElementById('editManagerId').value;
+                const editDepartment = document.getElementById('editDepartment').value;
+                const editUsername = document.getElementById('editUsername').value;
+                const editEmail = document.getElementById('editEmail').value;
+                const editRole = document.getElementById('editRole').value;
+                const editVacationClaim = document.getElementById('editVacationClaim').value;
+
+                if (editManager_id != manager_id || editDepartment != department || editUsername != username || editEmail != email || editRole != role || editVacationClaim != vacation_claim) {
+
+                    const updateResponse = await fetch(`/admin-update-user/${user_id}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ editManager_id, editDepartment, editUsername, editEmail, editRole, editVacationClaim }),
+                    });
+
+                    if (updateResponse.ok) {
+                        editUserModal.hide();
+                        location.reload();
+                    } else {
+                        // Handle login error
+                        console.error("Error updating user.");
+                        editUserModal.hide();
+                    }
+                } else {
+                    editUserModal.hide();
+                }
+            });
+        }
 
         // Enable Bootstrap modals
         var confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
@@ -146,15 +233,14 @@
         async function confirmAction() {
             // Retrieve additional data from the confirm button
             const action = document.getElementById('confirmActionBtn').dataset.action;
-            const userId = document.getElementById('confirmActionBtn').dataset.userId;
+            const user_id = document.getElementById('confirmActionBtn').dataset.userId;
 
-            if (action === "Delete") {
-                const response = await fetch(`/delete-user`, {
+            if (action === "Löschen") {
+                const response = await fetch(`/admin-delete-user/${user_id}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ user_id }),
                 });
 
                 if (response.ok) {
@@ -167,9 +253,6 @@
 
                 // Close the modal
                 confirmationModal.hide();
-            } else if (action === "Bearbeiten") {
-                // open edit modal for user data editing
-                console.log("editing user data happens here!");
             }
         }
     </script>

@@ -123,12 +123,10 @@ app.post("/register", (req, res) => {
         vac_claim,
       ];
 
-      pool
-        .query(insertQuery, values)
-        .catch((error) => {
-          console.error("Error inserting into database:", error);
-          res.status(500).send("Registration failed");
-        });
+      pool.query(insertQuery, values).catch((error) => {
+        console.error("Error inserting into database:", error);
+        res.status(500).send("Registration failed");
+      });
       res.status(201).json({ message: "User registered successfully" });
     }
   });
@@ -266,7 +264,7 @@ app.post(
   }
 );
 
-// for the employee:
+// User for the employee:
 app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
   // Get vacation requests
   const user_id = req.params.user_id;
@@ -314,7 +312,7 @@ app.post("/get-vacation-requests/:user_id", [verifyToken], (req, res) => {
   }
 });
 
-// Get vacation requests from same department
+// User Get vacation requests from same department
 app.post("/get-dep-vacation-requests/:user_id", [verifyToken], (req, res) => {
   // Get vacation requests
   const user_id = req.params.user_id;
@@ -350,7 +348,7 @@ app.post("/get-dep-vacation-requests/:user_id", [verifyToken], (req, res) => {
   }
 });
 
-// for the manager:
+// Manager for the manager:
 app.post(
   "/get-employee-requests/:user_id",
   [verifyToken, verifyManager],
@@ -405,7 +403,7 @@ app.post(
   }
 );
 
-// for the manager - get the amount of open requests:
+// Manager for the manager - get the amount of open requests:
 app.post(
   "/get-employee-requests-count/:user_id",
   [verifyToken, verifyManager],
@@ -431,7 +429,7 @@ app.post(
   }
 );
 
-// for the HR - get the amount of open requests:
+// HR for the HR - get the amount of open requests:
 app.post(
   "/get-employee-requests-count-hr-check",
   [verifyToken, verifyHR],
@@ -454,7 +452,7 @@ app.post(
   }
 );
 
-// Get the days, that the employee has left
+// User Get the days, that the employee has left
 app.post("/get-left-vacation-days/:user_id", [verifyToken], (req, res) => {
   // Get vacation requests
   const user_id = req.params.user_id;
@@ -507,7 +505,7 @@ app.post("/get-left-vacation-days/:user_id", [verifyToken], (req, res) => {
   }
 });
 
-// Get the departments, that the manager manages
+// Manager Get the departments, that the manager manages
 app.post(
   "/get-departments/:user_id",
   [verifyToken, verifyManager],
@@ -531,7 +529,7 @@ app.post(
   }
 );
 
-// Get the ics file, that the employee has selected
+// User Get the ics file, that the employee has selected
 app.post("/get-ics/:user_id", [verifyToken], (req, res) => {
   // Get vacation requests
   const user_id = req.params.user_id;
@@ -554,7 +552,7 @@ app.post("/get-ics/:user_id", [verifyToken], (req, res) => {
   }
 });
 
-// for HR
+// HR
 app.post("/get-all-requests/", [verifyToken, verifyHR], (req, res) => {
   // Get vacation requests
   try {
@@ -605,31 +603,91 @@ app.post("/get-all-requests/", [verifyToken, verifyHR], (req, res) => {
 app.post("/get-all-users/", [verifyToken, verifyAdmin], (req, res) => {
   // Get users
   try {
-    pool.query(`SELECT * FROM public.users ORDER BY user_id`, (error, results) => {
-      if (error) {
-        console.error("Error getting data:", error);
-        res.status(500).send("Error getting data from the database");
-      } else {
-        res.status(200).json(results.rows);
+    pool.query(
+      `SELECT * FROM public.users ORDER BY user_id`,
+      (error, results) => {
+        if (error) {
+          console.error("Error getting data:", error);
+          res.status(500).send("Error getting data from the database");
+        } else {
+          res.status(200).json(results.rows);
+        }
       }
-    });
+    );
   } catch (error) {
     console.error("Error getting request information:", error);
   }
 });
 
+// Admin Update user data
+app.post(
+  "/admin-update-user/:user_id",
+  [verifyToken, verifyAdmin],
+  (req, res) => {
+    const user_id = req.params.user_id;
+    const username = req.body.editUsername;
+    const email = req.body.editEmail;
+    const role = req.body.editRole;
+    const manager_id = req.body.editManager_id;
+    const department = req.body.editDepartment;
+    const vacation_claim = req.body.editVacationClaim;
+
+    pool.query(
+      `UPDATE public.users SET username='${username}', email='${email}', role='${role}', manager_id=${manager_id}, department='${department}', vacation_claim=${vacation_claim} WHERE user_id=${user_id};`,
+      (error, results) => {
+        if (error) {
+          console.error("Error updating user data:", error);
+          res.status(500).send("Error updating user data in the database");
+        } else {
+          res.status(200).send("User was successfully updated.");
+        }
+      }
+    );
+  }
+);
+
+// Admin DELETE User
+app.post(
+  "/admin-delete-user/:user_id",
+  [verifyToken, verifyAdmin],
+  (req, res) => {
+    const user_id = req.params.user_id;
+
+    pool.query(
+      `WITH deleted_users AS (
+    DELETE FROM users
+    WHERE user_id=${user_id}
+    RETURNING user_id
+    )
+    DELETE FROM vacation_request
+    WHERE user_id IN (SELECT user_id FROM deleted_users);`,
+      (error, results) => {
+        if (error) {
+          console.error("Error updating user data:", error);
+          res.status(500).send("Error updating user data in the database");
+        } else {
+          res.status(200).send("User was successfully updated.");
+        }
+      }
+    );
+  }
+);
+
 // for hr
 app.post("/get-all-users-hr/", [verifyToken, verifyHR], (req, res) => {
   // Get users
   try {
-    pool.query(`SELECT * FROM public.users ORDER BY user_id`, (error, results) => {
-      if (error) {
-        console.error("Error getting data:", error);
-        res.status(500).send("Error getting data from the database");
-      } else {
-        res.status(200).json(results.rows);
+    pool.query(
+      `SELECT * FROM public.users ORDER BY user_id`,
+      (error, results) => {
+        if (error) {
+          console.error("Error getting data:", error);
+          res.status(500).send("Error getting data from the database");
+        } else {
+          res.status(200).json(results.rows);
+        }
       }
-    });
+    );
   } catch (error) {
     console.error("Error getting request information:", error);
   }
