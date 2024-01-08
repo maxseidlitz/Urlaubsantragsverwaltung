@@ -4,13 +4,13 @@ Die Urlaubsantragsverwaltung ist eine einfache Webanwendung zur Verwaltung von U
 
 ## Technologien
 
-- **Programmiersprache:** Python, JScript, SQL, PHP
+- **Programmiersprache:** SQL, JavaScript, HTML
 
-- **Datenbank:** MySQL
+- **Datenbank:** PostgreSQL
 
-- **Frontend:** HTML, CSS, JavaScript
+- **Frontend:** HTML, CSS, JavaScript, (Bootstrap)
 
-- **Webframework (optional):** später vielleicht Flutter
+- **Webframework (optional):** später eventuell Flutter
 
 ## Funktionen
 
@@ -22,7 +22,7 @@ Die Urlaubsantragsverwaltung ist eine einfache Webanwendung zur Verwaltung von U
   - Art des Urlaubs (Bildungsurlaub, Umzug, Normaler Urlaub)
 - Antrag prüfen: Vorgesetzte oder Administratoren können eingereichte Urlaubsanträge überprüfen, genehmigen oder ablehnen.
 
-[User-Stories](https://mseid.notion.site/Urlaubsantragsverwaltung-OpenSource-f3835e6b4d8a4f819534d816b497f6ac?pvs=4)
+[Anwendungsfälle und Projektkoordination](https://mseid.notion.site/Urlaubsantragsverwaltung-OpenSource-f3835e6b4d8a4f819534d816b497f6ac?pvs=4)
 
 ## Verwendung
 
@@ -30,3 +30,10 @@ Die Urlaubsantragsverwaltung ist eine einfache Webanwendung zur Verwaltung von U
 
    ```shell
    git clone https://github.com/IhrBenutzername/urlaubsantragsverwaltung.git
+
+2. Öffnen Sie das Projekt in einem geeigneten Editor.
+3. Erstellen Sie sich eine .env-Datei mit den erforderlichen Parametern. (kann beim Repository-Owner angefragt werden)
+4. Führen Sie den Befehlt ``npm i`` im Terminal aus um notwendige Pakete der Middleware zu installieren
+5. Passen Sie die Parameter der ``db.js``an die ihrer erstellten PostgreSQL-Datenbank an. (Die Datenbankeinrichtung kann beim Repository-Owner angefragt werden) 
+6. Führen Sie ``npm run devStart`` aus um die Anwendung zu starten.
+7. Öffnen Sie die Port-Adresse in einem geeigneten Webbrowser (empfohlen: Firefox).
